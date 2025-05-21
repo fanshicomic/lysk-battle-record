@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"github.com/gin-contrib/cors"
 	"sort"
 	"strconv"
 	"time"
 
-	//"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
@@ -61,6 +60,7 @@ func main() {
 
 	r.POST("/record", processRecord)
 	r.GET("/records", getRecords)
+	r.GET("/last-records", getLastRecords)
 	r.GET("/record-count", getRecordCount)
 
 	r.Run(":8080")
@@ -104,34 +104,106 @@ func processRecord(c *gin.Context) {
 
 func getRecords(c *gin.Context) {
 	levelType := c.Query("type")
-	number := c.Query("level")
+	levelNum := c.Query("level")
 	offsetStr := c.DefaultQuery("offset", "0")
 	offset, _ := strconv.Atoi(offsetStr)
 
-	readRange := sheetName + "!A1:Z"
-	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
-	if err != nil || len(resp.Values) < 2 {
+	// Step 1: 快速读取关卡和关数列，缩小目标范围
+	values, err := getCachedABData()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败", "detail": err.Error()})
 		return
 	}
 
-	headers := resp.Values[0]
-	idxMap := make(map[string]int)
-	for i, h := range headers {
-		idxMap[fmt.Sprintf("%v", h)] = i
+	// Step 2: 找出匹配的行号
+	var matchedRows []int
+	for i, row := range values {
+		if len(row) >= 2 && fmt.Sprintf("%v", row[0]) == levelType && fmt.Sprintf("%v", row[1]) == levelNum {
+			matchedRows = append(matchedRows, i+2) // +2 因为 A2 是第二行
+		}
 	}
 
+	if offset >= len(matchedRows) {
+		c.JSON(http.StatusOK, []map[string]string{}) // 超出数据返回空
+		return
+	}
+
+	// Step 3: 取出分页范围
+	end := offset + 10
+	if end > len(matchedRows) {
+		end = len(matchedRows)
+	}
+	targetRows := matchedRows[offset:end]
+
+	// Step 4: 批量读取目标行的完整内容
+	var ranges []string
+	for _, r := range targetRows {
+		ranges = append(ranges, fmt.Sprintf("%s!A%d:Z%d", sheetName, r, r))
+	}
+
+	batchResp, err := srv.Spreadsheets.Values.BatchGet(spreadsheetID).Ranges(ranges...).Do()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取记录失败", "detail": err.Error()})
+		return
+	}
+
+	keys := []string{"关卡", "关数", "攻击", "生命", "防御", "对谱", "暴击", "暴伤", "加速回能", "虚弱增伤", "誓约增伤", "誓约回能", "搭档", "日卡", "阶数", "武器", "时间"}
+
 	var result []map[string]string
-	for _, row := range resp.Values[1:] {
-		if fmt.Sprintf("%v", row[idxMap["关卡"]]) == levelType && fmt.Sprintf("%v", row[idxMap["关数"]]) == number {
-			item := make(map[string]string)
-			for key, idx := range idxMap {
-				if idx < len(row) {
-					item[key] = fmt.Sprintf("%v", row[idx])
-				}
-			}
-			result = append(result, item)
+	for _, valueRange := range batchResp.ValueRanges {
+		if len(valueRange.Values) == 0 {
+			continue
 		}
+		row := valueRange.Values[0]
+		record := map[string]string{}
+		for i, key := range keys {
+			if i < len(row) {
+				record[key] = fmt.Sprintf("%v", row[i])
+			} else {
+				record[key] = ""
+			}
+		}
+		result = append(result, record)
+	}
+
+	// Step 5: 排序（可选）
+	sort.Slice(result, func(i, j int) bool {
+		return result[i]["时间"] > result[j]["时间"] // 时间字段为 ISO 格式可直接比较
+	})
+
+	c.JSON(http.StatusOK, result)
+}
+
+func getLastRecords(c *gin.Context) {
+	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, sheetName+"!A2:Z").Do()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取失败", "detail": err.Error()})
+		return
+	}
+
+	keys := []string{"关卡", "关数", "攻击", "生命", "防御", "对谱", "暴击", "暴伤", "加速回能", "虚弱增伤", "誓约增伤", "誓约回能", "搭档", "日卡", "阶数", "武器", "时间"}
+
+	records := resp.Values
+	n := len(records)
+	latest := [][]interface{}{}
+	if n >= 5 {
+		latest = records[n-5:]
+	} else {
+		latest = records
+	}
+
+	// 拼接为 JSON 返回
+	var result []map[string]string
+	for _, row := range latest {
+		record := map[string]string{}
+		for i, key := range keys {
+			if i < len(row) {
+				record[key] = fmt.Sprintf("%v", row[i])
+			} else {
+				record[key] = ""
+			}
+		}
+		result = append(result, record)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
@@ -140,17 +212,7 @@ func getRecords(c *gin.Context) {
 		return t2.Before(t1)
 	})
 
-	pageSize := 10
-	start := offset
-	end := start + pageSize
-	if start >= len(result) {
-		c.JSON(http.StatusOK, []map[string]string{})
-		return
-	}
-	if end > len(result) {
-		end = len(result)
-	}
-	c.JSON(http.StatusOK, result[start:end])
+	c.JSON(http.StatusOK, result)
 }
 
 func getRecordCount(c *gin.Context) {
