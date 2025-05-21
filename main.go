@@ -58,12 +58,18 @@ func main() {
 		MaxAge:           1 * time.Hour,
 	}))
 
+	r.GET("/ping", ping)
+
 	r.POST("/record", processRecord)
 	r.GET("/records", getRecords)
 	r.GET("/last-records", getLastRecords)
 	r.GET("/record-count", getRecordCount)
 
 	r.Run(":8080")
+}
+
+func ping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
 
 func processRecord(c *gin.Context) {
