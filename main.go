@@ -2,19 +2,18 @@ package main
 
 import (
 	"context"
+	"os"
 	"sort"
 	"strconv"
 	"time"
 
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
+	"log"
+	"net/http"
 )
 
 const (
@@ -27,21 +26,31 @@ var srv *sheets.Service
 func initGoogleSheets() {
 	ctx := context.Background()
 
-	b, err := os.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("无法读取凭证文件: %v", err)
+	// 优先使用本地 credentials.json，如果不存在就走默认（Cloud Run）
+	if b, err := os.ReadFile("credentials.json"); err == nil {
+		config, err := google.JWTConfigFromJSON(b, sheets.SpreadsheetsScope)
+		if err != nil {
+			log.Fatalf("解析凭证失败: %v", err)
+		}
+		client := config.Client(ctx)
+		srv, err = sheets.New(client)
+		if err != nil {
+			log.Fatalf("创建 Sheets 客户端失败: %v", err)
+		}
+		log.Println("使用 credentials.json 初始化 Sheets 客户端")
+		return
 	}
 
-	config, err := google.JWTConfigFromJSON(b, sheets.SpreadsheetsScope)
+	// fallback 到 Cloud Run 默认凭证
+	client, err := google.DefaultClient(ctx, sheets.SpreadsheetsScope)
 	if err != nil {
-		log.Fatalf("解析凭证失败: %v", err)
+		log.Fatalf("获取默认凭证失败: %v", err)
 	}
-
-	client := config.Client(ctx)
 	srv, err = sheets.New(client)
 	if err != nil {
 		log.Fatalf("创建 Sheets 客户端失败: %v", err)
 	}
+	log.Println("使用默认凭证 (Cloud Run) 初始化 Sheets 客户端")
 }
 
 func main() {
