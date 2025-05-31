@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"sort"
 	"time"
 )
@@ -25,6 +28,16 @@ type Record struct {
 	Time        string `json:"时间"` // 可额外解析为 time.Time
 }
 type Records []Record
+
+func (r Record) getHash() string {
+	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+		r.LevelType, r.LevelNumber, r.Attack, r.HP, r.Defense, r.Matching,
+		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
+		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon,
+	)
+	hash := sha256.Sum256([]byte(data))
+	return hex.EncodeToString(hash[:])
+}
 
 func (r Records) filter(filterFunc func(Record) bool) []Record {
 	result := Records{}

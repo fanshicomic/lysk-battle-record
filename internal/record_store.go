@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -9,12 +10,17 @@ import (
 type RecordStore interface {
 	GetAll() []Record
 	Query(opt QueryOptions) QueryResult
+	Insert(record Record)
+	PrepareInsert(record Record) error
+	IsDuplicate(record Record) bool
 }
 
 type InMemoryRecordStore struct {
-	mu          sync.RWMutex
-	records     []Record
-	sheetClient GoogleSheetClient
+	mu             sync.RWMutex
+	records        []Record
+	recordsHash    map[string]bool
+	ingestPoolHash map[string]bool
+	sheetClient    GoogleSheetClient
 }
 
 type QueryOptions struct {
@@ -32,7 +38,8 @@ type QueryResult struct {
 
 func NewInMemoryRecordStore(sheetClient GoogleSheetClient) *InMemoryRecordStore {
 	store := &InMemoryRecordStore{
-		sheetClient: sheetClient,
+		sheetClient:    sheetClient,
+		ingestPoolHash: make(map[string]bool),
 	}
 	go store.autoRefresh()
 	return store
@@ -46,7 +53,6 @@ func (s *InMemoryRecordStore) autoRefresh() {
 }
 
 func (s *InMemoryRecordStore) refresh() {
-	// 从 Google Sheets 获取数据
 	data, err := s.sheetClient.FetchAllSheetData()
 	if err != nil {
 		log.Printf("failed to refresh cache: %v", err)
@@ -54,8 +60,21 @@ func (s *InMemoryRecordStore) refresh() {
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.records = data
+	s.mu.Unlock()
+
+	s.recordsHash = map[string]bool{}
+	for _, record := range data {
+		s.ingestHash(record)
+	}
+}
+
+func (s *InMemoryRecordStore) ingestHash(record Record) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	key := record.getHash()
+	s.recordsHash[key] = true
 }
 
 func (s *InMemoryRecordStore) GetAll() []Record {
@@ -85,6 +104,34 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 		Total:   count,
 		Records: res,
 	}
+}
+
+func (s *InMemoryRecordStore) Insert(record Record) {
+	s.ingestHash(record)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.records = append(s.records, record)
+	delete(s.ingestPoolHash, record.getHash())
+}
+
+func (s *InMemoryRecordStore) PrepareInsert(record Record) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	key := record.getHash()
+	if s.ingestPoolHash[key] {
+		return errors.New("记录已在上传准备中")
+	}
+	s.ingestPoolHash[key] = true
+	return nil
+}
+
+func (s *InMemoryRecordStore) IsDuplicate(record Record) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.recordsHash[record.getHash()] || s.ingestPoolHash[record.getHash()]
 }
 
 func getFilters(key, value string) func(Record) bool {
