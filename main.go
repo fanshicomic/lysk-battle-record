@@ -74,6 +74,17 @@ func (s *Server) processRecord(c *gin.Context) {
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
 
+	if s.recordStore.IsDuplicate(record) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "记录已存在"})
+		return
+	}
+
+	err := s.recordStore.PrepareInsert(record)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "记录上传失败", "detail": err.Error()})
+		return
+	}
+
 	// 时间字段处理为 ISO 格式
 	if t, ok := input["时间"].(string); ok {
 		if parsedTime, err := time.Parse(time.RFC3339, t); err == nil {
@@ -91,6 +102,8 @@ func (s *Server) processRecord(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入失败", "detail": err.Error()})
 		return
 	}
+
+	s.recordStore.Insert(record)
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
