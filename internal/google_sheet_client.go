@@ -3,9 +3,9 @@ package internal
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
 )
@@ -32,16 +32,16 @@ func NewGoogleSheetClient() *GoogleSheetClientImpl {
 	if b, err := os.ReadFile("credentials.json"); err == nil {
 		config, err := google.JWTConfigFromJSON(b, sheets.SpreadsheetsScope)
 		if err != nil {
-			log.Fatalf("failed to load credentials.json: %v", err)
+			logrus.Fatalf("failed to load credentials.json: %v", err)
 		}
 
 		client := config.Client(ctx)
 		srv, err = sheets.New(client)
 		if err != nil {
-			log.Fatalf("failed to init Sheets client with credentials.json: %v", err)
+			logrus.Fatalf("failed to init Sheets client with credentials.json: %v", err)
 		}
 
-		log.Println("use credentials.json to init Sheets client")
+		logrus.Info("use credentials.json to init Sheets client")
 		return &GoogleSheetClientImpl{
 			srv: srv,
 		}
@@ -50,15 +50,15 @@ func NewGoogleSheetClient() *GoogleSheetClientImpl {
 	// fallback 到 Cloud Run 默认凭证
 	client, err := google.DefaultClient(ctx, sheets.SpreadsheetsScope)
 	if err != nil {
-		log.Fatalf("failed to fetch service account credential: %v", err)
+		logrus.Fatalf("failed to fetch service account credential: %v", err)
 	}
 
 	srv, err = sheets.New(client)
 	if err != nil {
-		log.Fatalf("failed to init Sheets client with service account credential: %v", err)
+		logrus.Fatalf("failed to init Sheets client with service account credential: %v", err)
 	}
 
-	log.Println("using default client (Cloud Run) to init Sheets client")
+	logrus.Info("using default client (Cloud Run) to init Sheets client")
 	return &GoogleSheetClientImpl{
 		srv: srv,
 	}
@@ -75,7 +75,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		if hStr, ok := h.(string); ok {
 			headerIndexMap[hStr] = i
 		} else {
-			log.Printf("header %v is not a string, skipping", h)
+			logrus.Info("header %v is not a string, skipping", h)
 		}
 	}
 
@@ -159,7 +159,7 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 		Values: [][]interface{}{row},
 	}).ValueInputOption("RAW").Do()
 	if err != nil {
-		log.Printf("failed to append record to Google Sheets: %v", err)
+		logrus.Errorf("failed to append record to Google Sheets: %v", err)
 		return err
 	}
 
