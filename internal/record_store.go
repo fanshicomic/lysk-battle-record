@@ -2,9 +2,10 @@ package internal
 
 import (
 	"errors"
-	"log"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type RecordStore interface {
@@ -55,7 +56,7 @@ func (s *InMemoryRecordStore) autoRefresh() {
 func (s *InMemoryRecordStore) refresh() {
 	data, err := s.sheetClient.FetchAllSheetData()
 	if err != nil {
-		log.Printf("failed to refresh cache: %v", err)
+		logrus.Errorf("failed to refresh cache: %v", err)
 		return
 	}
 
