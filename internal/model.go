@@ -31,7 +31,11 @@ type Record struct {
 type Records []Record
 
 func (r Record) Validate() bool {
-	if r.LevelType == "" || r.LevelNumber == "" || r.Attack == "" || r.Matching == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
+	if r.LevelType == "" || r.Attack == "" || r.Matching == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
+		return false
+	}
+
+	if r.LevelType != "A4" && r.LevelType != "B4" && r.LevelType != "C4" && r.LevelNumber == "" {
 		return false
 	}
 
