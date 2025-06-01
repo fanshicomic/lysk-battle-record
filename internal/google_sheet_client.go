@@ -10,21 +10,19 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-const (
-	spreadsheetID = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
-	sheetName     = "面板"
-)
-
 type GoogleSheetClient interface {
 	FetchAllSheetData() ([]Record, error)
 	ProcessRecord(record Record) error
+	GetType() string
 }
 
 type GoogleSheetClientImpl struct {
-	srv *sheets.Service
+	sheetId   string
+	sheetName string
+	srv       *sheets.Service
 }
 
-func NewGoogleSheetClient() *GoogleSheetClientImpl {
+func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 	ctx := context.Background()
 	var srv *sheets.Service
 
@@ -32,40 +30,44 @@ func NewGoogleSheetClient() *GoogleSheetClientImpl {
 	if b, err := os.ReadFile("credentials.json"); err == nil {
 		config, err := google.JWTConfigFromJSON(b, sheets.SpreadsheetsScope)
 		if err != nil {
-			logrus.Fatalf("failed to load credentials.json: %v", err)
+			logrus.Fatalf("%s sheet failed to load credentials.json: %v", sheetName, err)
 		}
 
 		client := config.Client(ctx)
 		srv, err = sheets.New(client)
 		if err != nil {
-			logrus.Fatalf("failed to init Sheets client with credentials.json: %v", err)
+			logrus.Fatalf("%s failed to init Sheets client with credentials.json: %v", sheetName, err)
 		}
 
-		logrus.Info("use credentials.json to init Sheets client")
+		logrus.Infof("%s use credentials.json to init Sheets client", sheetName)
 		return &GoogleSheetClientImpl{
-			srv: srv,
+			srv:       srv,
+			sheetId:   sheetId,
+			sheetName: sheetName,
 		}
 	}
 
 	// fallback 到 Cloud Run 默认凭证
 	client, err := google.DefaultClient(ctx, sheets.SpreadsheetsScope)
 	if err != nil {
-		logrus.Fatalf("failed to fetch service account credential: %v", err)
+		logrus.Fatalf("%s failed to fetch service account credential: %v", sheetName, err)
 	}
 
 	srv, err = sheets.New(client)
 	if err != nil {
-		logrus.Fatalf("failed to init Sheets client with service account credential: %v", err)
+		logrus.Fatalf("%s failed to init Sheets client with service account credential: %v", sheetName, err)
 	}
 
-	logrus.Info("using default client (Cloud Run) to init Sheets client")
+	logrus.Infof("%s using default client (Cloud Run) to init Sheets client", sheetName)
 	return &GoogleSheetClientImpl{
-		srv: srv,
+		srv:       srv,
+		sheetId:   sheetId,
+		sheetName: sheetName,
 	}
 }
 
 func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
-	header, err := c.srv.Spreadsheets.Values.Get(spreadsheetID, "面板!A1:Q").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Q").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		}
 	}
 
-	resp, err := c.srv.Spreadsheets.Values.Get(spreadsheetID, "面板!A2:Q").Do()
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:Q").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +157,7 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 		}
 	}
 
-	_, err := c.srv.Spreadsheets.Values.Append(spreadsheetID, sheetName+"!A1", &sheets.ValueRange{
+	_, err := c.srv.Spreadsheets.Values.Append(c.sheetId, c.sheetName+"!A1", &sheets.ValueRange{
 		Values: [][]interface{}{row},
 	}).ValueInputOption("RAW").Do()
 	if err != nil {
@@ -164,4 +166,8 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 	}
 
 	return nil
+}
+
+func (c *GoogleSheetClientImpl) GetType() string {
+	return c.sheetName
 }

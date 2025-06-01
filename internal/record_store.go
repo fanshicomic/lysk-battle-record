@@ -56,7 +56,7 @@ func (s *InMemoryRecordStore) autoRefresh() {
 func (s *InMemoryRecordStore) refresh() {
 	data, err := s.sheetClient.FetchAllSheetData()
 	if err != nil {
-		logrus.Errorf("failed to refresh cache: %v", err)
+		logrus.Errorf("failed to refresh cache for sheet: %s with error %v", s.sheetClient.GetType(), err)
 		return
 	}
 
@@ -68,6 +68,7 @@ func (s *InMemoryRecordStore) refresh() {
 	for _, record := range data {
 		s.ingestHash(record)
 	}
+	logrus.Infof("sheet %s refreshed %d records", s.sheetClient.GetType(), len(s.records))
 }
 
 func (s *InMemoryRecordStore) ingestHash(record Record) {
