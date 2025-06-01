@@ -42,7 +42,8 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // 可改为指定域名，如 "https://yourdomain.com"
+		AllowOrigins: []string{"https://uygnim.com"},
+		//AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -51,9 +52,6 @@ func main() {
 	}))
 
 	r.GET("/ping", server.ping)
-
-	r.POST("/record", server.processOrbitRecord)
-	r.GET("/records", server.getOrbitRecords)
 
 	r.POST("/orbit-record", server.processOrbitRecord)
 	r.GET("/orbit-records", server.getOrbitRecords)
@@ -95,6 +93,11 @@ func (s *Server) processOrbitRecord(c *gin.Context) {
 	record.SetCard = fmt.Sprintf("%v", input["日卡"])
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
+
+	if !record.Validate() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "记录数据错误"})
+		return
+	}
 
 	if s.orbitRecordStore.IsDuplicate(record) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "记录已存在"})

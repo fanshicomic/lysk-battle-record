@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -28,6 +29,33 @@ type Record struct {
 	Time        string `json:"时间"` // 可额外解析为 time.Time
 }
 type Records []Record
+
+func (r Record) Validate() bool {
+	if r.LevelType == "" || r.LevelNumber == "" || r.Attack == "" || r.Matching == "" || r.CritRate == "" || r.CritDmg == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
+		return false
+	}
+
+	fields := []string{r.Attack, r.HP, r.Defense, r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost}
+	for _, v := range fields {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			return false
+		}
+	}
+
+	energyRegen, _ := strconv.Atoi(r.EnergyRegen)
+	oathRegen, _ := strconv.Atoi(r.OathRegen)
+	if energyRegen+oathRegen > 48 {
+		return false
+	}
+
+	oathBoost, _ := strconv.Atoi(r.OathBoost)
+	if oathBoost > 62 {
+		return false
+	}
+
+	return true
+}
 
 func (r Record) getHash() string {
 	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
