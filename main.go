@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -41,9 +42,13 @@ func main() {
 
 	r := gin.Default()
 
+	allowOrigins := []string{"https://uygnim.com"}
+	if isLocal() {
+		allowOrigins = []string{"http://localhost:63343"}
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"https://uygnim.com"},
-		//AllowOrigins:     []string{"*"},
+		AllowOrigins:     allowOrigins,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -233,4 +238,12 @@ func (s *Server) getLatestChampionshipsRecords(c *gin.Context) {
 		Limit: 5,
 	})
 	c.JSON(http.StatusOK, record)
+}
+
+func isLocal() bool {
+	if _, err := os.ReadFile("credentials.json"); err == nil {
+		return true
+	}
+
+	return false
 }

@@ -31,13 +31,16 @@ type Record struct {
 type Records []Record
 
 func (r Record) Validate() bool {
-	if r.LevelType == "" || r.LevelNumber == "" || r.Attack == "" || r.Matching == "" || r.CritRate == "" || r.CritDmg == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
+	if r.LevelType == "" || r.LevelNumber == "" || r.Attack == "" || r.Matching == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
 		return false
 	}
 
 	fields := []string{r.Attack, r.HP, r.Defense, r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost}
 	for _, v := range fields {
-		n, err := strconv.Atoi(v)
+		if v == "" {
+			continue
+		}
+		n, err := strconv.ParseFloat(v, 64)
 		if err != nil || n < 0 {
 			return false
 		}
