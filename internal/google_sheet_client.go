@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -14,6 +16,7 @@ type GoogleSheetClient interface {
 	FetchAllSheetData() ([]Record, error)
 	ProcessRecord(record Record) error
 	GetType() string
+	MarkAllAsExpired() error
 }
 
 type GoogleSheetClientImpl struct {
@@ -77,7 +80,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		if hStr, ok := h.(string); ok {
 			headerIndexMap[hStr] = i
 		} else {
-			logrus.Info("header %v is not a string, skipping", h)
+			logrus.Infof("sheet %s header %v is not a string, skipping", c.sheetName, h)
 		}
 	}
 
@@ -90,28 +93,36 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 	for _, row := range resp.Values {
 		r := Record{}
 
-		r.LevelType = fmt.Sprint(row[headerIndexMap["关卡"]])
-		r.LevelNumber = fmt.Sprint(row[headerIndexMap["关数"]])
-		r.Attack = fmt.Sprint(row[headerIndexMap["攻击"]])
-		r.HP = fmt.Sprint(row[headerIndexMap["生命"]])
-		r.Defense = fmt.Sprint(row[headerIndexMap["防御"]])
-		r.Matching = fmt.Sprint(row[headerIndexMap["对谱"]])
-		r.CritRate = fmt.Sprint(row[headerIndexMap["暴击"]])
-		r.CritDmg = fmt.Sprint(row[headerIndexMap["暴伤"]])
-		r.EnergyRegen = fmt.Sprint(row[headerIndexMap["加速回能"]])
-		r.WeakenBoost = fmt.Sprint(row[headerIndexMap["虚弱增伤"]])
-		r.OathBoost = fmt.Sprint(row[headerIndexMap["誓约增伤"]])
-		r.OathRegen = fmt.Sprint(row[headerIndexMap["誓约回能"]])
-		r.Partner = fmt.Sprint(row[headerIndexMap["搭档身份"]])
-		r.SetCard = fmt.Sprint(row[headerIndexMap["日卡"]])
-		r.Stage = fmt.Sprint(row[headerIndexMap["阶数"]])
-		r.Weapon = fmt.Sprint(row[headerIndexMap["武器"]])
-		r.Time = fmt.Sprint(row[headerIndexMap["时间"]])
+		r.LevelType = fmt.Sprint(c.getValue(row, headerIndexMap, "关卡"))
+		r.LevelNumber = fmt.Sprint(c.getValue(row, headerIndexMap, "关数"))
+		r.Attack = fmt.Sprint(c.getValue(row, headerIndexMap, "攻击"))
+		r.HP = fmt.Sprint(c.getValue(row, headerIndexMap, "生命"))
+		r.Defense = fmt.Sprint(c.getValue(row, headerIndexMap, "防御"))
+		r.Matching = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱"))
+		r.CritRate = fmt.Sprint(c.getValue(row, headerIndexMap, "暴击"))
+		r.CritDmg = fmt.Sprint(c.getValue(row, headerIndexMap, "暴伤"))
+		r.EnergyRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "加速回能"))
+		r.WeakenBoost = fmt.Sprint(c.getValue(row, headerIndexMap, "虚弱增伤"))
+		r.OathBoost = fmt.Sprint(c.getValue(row, headerIndexMap, "誓约增伤"))
+		r.OathRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "誓约回能"))
+		r.Partner = fmt.Sprint(c.getValue(row, headerIndexMap, "搭档身份"))
+		r.SetCard = fmt.Sprint(c.getValue(row, headerIndexMap, "日卡"))
+		r.Stage = fmt.Sprint(c.getValue(row, headerIndexMap, "阶数"))
+		r.Weapon = fmt.Sprint(c.getValue(row, headerIndexMap, "武器"))
+		r.Time = fmt.Sprint(c.getValue(row, headerIndexMap, "时间"))
 
 		records = append(records, r)
 	}
 
 	return records, nil
+}
+
+func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[string]int, key string) interface{} {
+	if index, ok := headerIndexMap[key]; ok && index < len(row) {
+		return row[index]
+	}
+	logrus.Warnf("sheet %s header %s not found in row %v", c.sheetName, key, row)
+	return nil
 }
 
 func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
@@ -161,7 +172,7 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 		Values: [][]interface{}{row},
 	}).ValueInputOption("RAW").Do()
 	if err != nil {
-		logrus.Errorf("failed to append record to Google Sheets: %v", err)
+		logrus.Errorf("sheet %s failed to append record to Google Sheets: %v", c.sheetName, err)
 		return err
 	}
 
@@ -170,4 +181,77 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 
 func (c *GoogleSheetClientImpl) GetType() string {
 	return c.sheetName
+}
+
+func (c *GoogleSheetClientImpl) MarkAllAsExpired() error {
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
+	if err != nil {
+		logrus.Errorf("failed to read sheet %s with error: %v", c.sheetName, err)
+		return err
+	}
+
+	if len(resp.Values) == 0 {
+		logrus.Infof("%s sheet is empty", c.sheetName)
+		return nil
+	}
+
+	headers := resp.Values[0]
+	expiredCol := -1
+	for i, h := range headers {
+		if h == "已过期" {
+			expiredCol = i
+			break
+		}
+	}
+	if expiredCol == -1 {
+		logrus.Error("expired column not found")
+		return fmt.Errorf("未找到 '已过期' 字段")
+	}
+
+	// 计算哪些需要更新
+	var updates []*sheets.Request
+	sheetId := int64(1105225329)
+	for rowIndex, row := range resp.Values[1:] {
+		// 记录从第2行开始（index 1），所以 +2 表示行号
+		rowNum := rowIndex + 2
+
+		// 如果已过期字段存在且已经是 true，跳过
+		if expiredCol < len(row) && strings.TrimSpace(fmt.Sprint(row[expiredCol])) == "true" {
+			continue
+		}
+
+		// 构造更新请求
+		updates = append(updates, &sheets.Request{
+			UpdateCells: &sheets.UpdateCellsRequest{
+				Range: &sheets.GridRange{
+					SheetId:          sheetId, // 你需要先获取实际的 sheetId
+					StartRowIndex:    int64(rowNum - 1),
+					EndRowIndex:      int64(rowNum),
+					StartColumnIndex: int64(expiredCol),
+					EndColumnIndex:   int64(expiredCol + 1),
+				},
+				Rows: []*sheets.RowData{{
+					Values: []*sheets.CellData{{
+						UserEnteredValue: &sheets.ExtendedValue{BoolValue: googleapi.Bool(true)},
+					}},
+				}},
+				Fields: "userEnteredValue",
+			},
+		})
+	}
+
+	if len(updates) == 0 {
+		logrus.Info("All records are already marked as expired")
+		return nil
+	}
+
+	_, err = c.srv.Spreadsheets.BatchUpdate(c.sheetId, &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: updates,
+	}).Do()
+	if err != nil {
+		return fmt.Errorf("sheet %s failed to update for expiration: %w", c.sheetName, err)
+	}
+
+	logrus.Infof("updated %d records to expired", len(updates))
+	return nil
 }
