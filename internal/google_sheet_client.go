@@ -70,7 +70,7 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 }
 
 func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Q").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:R").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		}
 	}
 
-	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:Q").Do()
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:R").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.SetCard = fmt.Sprint(c.getValue(row, headerIndexMap, "日卡"))
 		r.Stage = fmt.Sprint(c.getValue(row, headerIndexMap, "阶数"))
 		r.Weapon = fmt.Sprint(c.getValue(row, headerIndexMap, "武器"))
+		r.Buffer = fmt.Sprint(c.getValue(row, headerIndexMap, "加成"))
 		r.Time = fmt.Sprint(c.getValue(row, headerIndexMap, "时间"))
 
 		records = append(records, r)
@@ -126,7 +127,7 @@ func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[s
 }
 
 func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
-	keys := []string{"关卡", "关数", "攻击", "防御", "生命", "对谱", "暴击", "暴伤", "加速回能", "虚弱增伤", "誓约增伤", "誓约回能", "搭档身份", "日卡", "阶数", "武器", "时间"}
+	keys := []string{"关卡", "关数", "攻击", "防御", "生命", "对谱", "暴击", "暴伤", "加速回能", "虚弱增伤", "誓约增伤", "誓约回能", "搭档身份", "日卡", "阶数", "武器", "加成", "时间"}
 	row := make([]interface{}, 0)
 	for _, key := range keys {
 		switch key {
@@ -162,6 +163,8 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 			row = append(row, record.Stage)
 		case "武器":
 			row = append(row, record.Weapon)
+		case "加成":
+			row = append(row, record.Buffer)
 		case "时间":
 			row = append(row, record.Time)
 		default:
