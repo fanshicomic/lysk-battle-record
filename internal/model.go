@@ -26,16 +26,13 @@ type Record struct {
 	SetCard     string `json:"日卡"`
 	Stage       string `json:"阶数"`
 	Weapon      string `json:"武器"`
+	Buffer      string `json:"加成"`
 	Time        string `json:"时间"` // 可额外解析为 time.Time
 }
 type Records []Record
 
-func (r Record) Validate() bool {
+func (r Record) ValidateCommon() bool {
 	if r.LevelType == "" || r.Attack == "" || r.Matching == "" || r.Partner == "" || r.SetCard == "" || r.Stage == "" || r.Weapon == "" {
-		return false
-	}
-
-	if r.LevelType != "A4" && r.LevelType != "B4" && r.LevelType != "C4" && r.LevelNumber == "" {
 		return false
 	}
 
@@ -64,11 +61,27 @@ func (r Record) Validate() bool {
 	return true
 }
 
+func (r Record) ValidateOrbit() bool {
+	if r.LevelNumber == "" {
+		return false
+	}
+
+	return r.ValidateCommon()
+}
+
+func (r Record) ValidateChampionships() bool {
+	if r.Buffer == "" {
+		return false
+	}
+
+	return r.ValidateCommon()
+}
+
 func (r Record) getHash() string {
-	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 		r.LevelType, r.LevelNumber, r.Attack, r.HP, r.Defense, r.Matching,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
-		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon,
+		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buffer,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

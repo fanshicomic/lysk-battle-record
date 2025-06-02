@@ -71,7 +71,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
 
-	if !record.Validate() {
+	if !record.ValidateOrbit() {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "数据错误，请核实您的数据"})
 		return
 	}
@@ -149,8 +149,9 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	record.SetCard = fmt.Sprintf("%v", input["日卡"])
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
+	record.Buffer = fmt.Sprintf("%v", input["加成"])
 
-	if !record.Validate() {
+	if !record.ValidateChampionships() {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "数据错误，请核实您的数据"})
 		return
 	}
