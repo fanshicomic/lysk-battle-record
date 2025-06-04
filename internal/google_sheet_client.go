@@ -70,7 +70,7 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 }
 
 func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:R").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:S").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +79,10 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 	for i, h := range header.Values[0] {
 		if hStr, ok := h.(string); ok {
 			headerIndexMap[hStr] = i
-		} else {
-			logrus.Infof("sheet %s header %v is not a string, skipping", c.sheetName, h)
 		}
 	}
 
-	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:R").Do()
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:S").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +97,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.HP = fmt.Sprint(c.getValue(row, headerIndexMap, "生命"))
 		r.Defense = fmt.Sprint(c.getValue(row, headerIndexMap, "防御"))
 		r.Matching = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱"))
+		r.MatchingBuffer = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱加成"))
 		r.CritRate = fmt.Sprint(c.getValue(row, headerIndexMap, "暴击"))
 		r.CritDmg = fmt.Sprint(c.getValue(row, headerIndexMap, "暴伤"))
 		r.EnergyRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "加速回能"))
@@ -127,51 +126,66 @@ func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[s
 }
 
 func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
-	keys := []string{"关卡", "关数", "攻击", "防御", "生命", "对谱", "暴击", "暴伤", "加速回能", "虚弱增伤", "誓约增伤", "誓约回能", "搭档身份", "日卡", "阶数", "武器", "加成", "时间"}
-	row := make([]interface{}, 0)
-	for _, key := range keys {
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:S").Do()
+	if err != nil {
+		return err
+	}
+
+	headerIndexMap := make(map[string]int)
+	for i, h := range header.Values[0] {
+		if hStr, ok := h.(string); ok {
+			headerIndexMap[hStr] = i
+		} else {
+			logrus.Infof("sheet %s header %v is not a string, skipping", c.sheetName, h)
+		}
+	}
+
+	row := make([]interface{}, len(headerIndexMap))
+	for key, index := range headerIndexMap {
 		switch key {
 		case "关卡":
-			row = append(row, record.LevelType)
+			row[index] = record.LevelType
 		case "关数":
-			row = append(row, record.LevelNumber)
+			row[index] = record.LevelNumber
 		case "攻击":
-			row = append(row, record.Attack)
-		case "生命":
-			row = append(row, record.HP)
+			row[index] = record.Attack
 		case "防御":
-			row = append(row, record.Defense)
+			row[index] = record.Defense
+		case "生命":
+			row[index] = record.HP
 		case "对谱":
-			row = append(row, record.Matching)
+			row[index] = record.Matching
+		case "对谱加成":
+			row[index] = record.MatchingBuffer
 		case "暴击":
-			row = append(row, record.CritRate)
+			row[index] = record.CritRate
 		case "暴伤":
-			row = append(row, record.CritDmg)
+			row[index] = record.CritDmg
 		case "加速回能":
-			row = append(row, record.EnergyRegen)
+			row[index] = record.EnergyRegen
 		case "虚弱增伤":
-			row = append(row, record.WeakenBoost)
+			row[index] = record.WeakenBoost
 		case "誓约增伤":
-			row = append(row, record.OathBoost)
+			row[index] = record.OathBoost
 		case "誓约回能":
-			row = append(row, record.OathRegen)
+			row[index] = record.OathRegen
 		case "搭档身份":
-			row = append(row, record.Partner)
+			row[index] = record.Partner
 		case "日卡":
-			row = append(row, record.SetCard)
+			row[index] = record.SetCard
 		case "阶数":
-			row = append(row, record.Stage)
+			row[index] = record.Stage
 		case "武器":
-			row = append(row, record.Weapon)
+			row[index] = record.Weapon
 		case "加成":
-			row = append(row, record.Buffer)
+			row[index] = record.Buffer
 		case "时间":
-			row = append(row, record.Time)
+			row[index] = record.Time
 		default:
 		}
 	}
 
-	_, err := c.srv.Spreadsheets.Values.Append(c.sheetId, c.sheetName+"!A1", &sheets.ValueRange{
+	_, err = c.srv.Spreadsheets.Values.Append(c.sheetId, c.sheetName+"!A1", &sheets.ValueRange{
 		Values: [][]interface{}{row},
 	}).ValueInputOption("RAW").Do()
 	if err != nil {
