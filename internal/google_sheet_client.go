@@ -121,7 +121,6 @@ func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[s
 	if index, ok := headerIndexMap[key]; ok && index < len(row) {
 		return row[index]
 	}
-	logrus.Warnf("sheet %s header %s not found in row %v", c.sheetName, key, row)
 	return nil
 }
 
