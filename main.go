@@ -33,7 +33,7 @@ func main() {
 
 	allowOrigins := []string{"https://uygnim.com"}
 	if isLocal() {
-		allowOrigins = []string{"http://localhost:63343"}
+		allowOrigins = []string{"*"}
 	}
 
 	r.Use(cors.New(cors.Config{
