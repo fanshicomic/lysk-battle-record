@@ -37,6 +37,14 @@ func (r Record) ValidateCommon() bool {
 		return false
 	}
 
+	if r.SetCard == "无套装" && r.Stage != "无套装" {
+		return false
+	}
+
+	if r.SetCard != "无套装" && r.Stage == "无套装" {
+		return false
+	}
+
 	fields := []string{r.Attack, r.HP, r.Defense, r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost}
 	for _, v := range fields {
 		if v == "" {
