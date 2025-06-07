@@ -33,9 +33,9 @@ type Record struct {
 type Records []Record
 
 func (r Record) ValidateCommon() (bool, error) {
-	if !r.validateLevelType() {
-		return false, fmt.Errorf("无效的关卡类型: %s", r.LevelType)
-	}
+	//if !r.validateLevelType() {
+	//	return false, fmt.Errorf("无效的关卡类型: %s", r.LevelType)
+	//}
 
 	if !r.ValidateAttack() {
 		return false, fmt.Errorf("攻击数值错误: %s", r.Attack)
