@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type Server interface {
@@ -49,6 +50,7 @@ func (s *LyskServer) Ping(c *gin.Context) {
 func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	var input map[string]interface{}
 	if err := c.BindJSON(&input); err != nil {
+		logrus.Errorf("[Orbit] Failed to bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误", "detail": err.Error()})
 		return
 	}
@@ -73,17 +75,20 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
 
 	if _, err := record.ValidateOrbit(); err != nil {
+		logrus.Errorf("[Orbit] Record validation failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if s.orbitRecordStore.IsDuplicate(record) {
+		logrus.Errorf("[Orbit] Record is duplicated")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "记录已存在"})
 		return
 	}
 
 	err := s.orbitRecordStore.PrepareInsert(record)
 	if err != nil {
+		logrus.Errorf("[Orbit] Failed to prepare record for insertion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "记录上传失败", "detail": err.Error()})
 		return
 	}
@@ -93,15 +98,18 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 		if parsedTime, err := time.Parse(time.RFC3339, t); err == nil {
 			record.Time = parsedTime.Format(time.RFC3339)
 		} else {
+			logrus.Errorf("[Orbit] Failed to parse time: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "时间格式错误"})
 			return
 		}
 	} else {
+		logrus.Error("[Orbit] Time field is missing or in wrong format")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "时间字段缺失或格式错误"})
 		return
 	}
 
 	if err := s.orbitSheetClient.ProcessRecord(record); err != nil {
+		logrus.Errorf("[Orbit] Failed to write record to Google Sheet: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入失败", "detail": err.Error()})
 		return
 	}
@@ -130,6 +138,7 @@ func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
 func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	var input map[string]interface{}
 	if err := c.BindJSON(&input); err != nil {
+		logrus.Errorf("[Championships] Failed to bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误", "detail": err.Error()})
 		return
 	}
@@ -154,17 +163,20 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	record.Buffer = fmt.Sprintf("%v", input["加成"])
 
 	if _, err := record.ValidateChampionships(); err != nil {
+		logrus.Errorf("[Championships] Record validation failed: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if s.championshipsRecordStore.IsDuplicate(record) {
+		logrus.Errorf("[Championships] Record is duplicated")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "记录已存在"})
 		return
 	}
 
 	err := s.championshipsRecordStore.PrepareInsert(record)
 	if err != nil {
+		logrus.Errorf("[Championships] Failed to prepare record for insertion: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "记录上传失败", "detail": err.Error()})
 		return
 	}
@@ -174,15 +186,18 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 		if parsedTime, err := time.Parse(time.RFC3339, t); err == nil {
 			record.Time = parsedTime.Format(time.RFC3339)
 		} else {
+			logrus.Errorf("[Championships] Failed to parse time: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "时间格式错误"})
 			return
 		}
 	} else {
+		logrus.Error("[Championships] Time field is missing or in wrong format")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "时间字段缺失或格式错误"})
 		return
 	}
 
 	if err := s.championshipsSheetClient.ProcessRecord(record); err != nil {
+		logrus.Errorf("[Championships] Failed to write record to Google Sheet: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入失败", "detail": err.Error()})
 		return
 	}

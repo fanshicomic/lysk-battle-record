@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -33,9 +34,9 @@ type Record struct {
 type Records []Record
 
 func (r Record) ValidateCommon() (bool, error) {
-	//if !r.validateLevelType() {
-	//	return false, fmt.Errorf("无效的关卡类型: %s", r.LevelType)
-	//}
+	if !r.validateLevelType() {
+		return false, fmt.Errorf("无效的关卡类型: %s", r.LevelType)
+	}
 
 	if !r.ValidateAttack() {
 		return false, fmt.Errorf("攻击数值错误: %s", r.Attack)
@@ -136,9 +137,20 @@ func (r Record) ValidateLevelNumber() bool {
 		"引力": 120,
 		"开放": 240,
 	}
-	levelNumber, _ := strconv.Atoi(r.LevelNumber)
+	levelInfo := strings.Split(r.LevelNumber, "_")
+	var levelPart string
+
+	if len(levelInfo) == 2 {
+		levelPart = levelInfo[1]
+	}
+
+	levelNumber, _ := strconv.Atoi(levelInfo[0])
 	if r.LevelType != "A4" && r.LevelType != "B4" && r.LevelType != "C4" {
-		return levelNumber > 0 && levelNumber <= maxLevelNumber[r.LevelType]
+		isValidNumber := levelNumber > 0 && levelNumber <= maxLevelNumber[r.LevelType]
+		isValidPart := (levelNumber%10 != 0 && levelPart == "") || (levelNumber%10 == 0 && levelPart == "上" || levelPart == "下")
+		if !isValidNumber || !isValidPart {
+			return false
+		}
 	}
 
 	return true
