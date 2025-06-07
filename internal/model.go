@@ -288,9 +288,10 @@ func (r Record) ValidateCritRate() bool {
 }
 
 func (r Record) ValidateCritDmg() bool {
-	maxCritDmg := float64(20 * 2) // 20 max from each sun card itself
-	maxCritDmg += 22.4 * 4        // 22.4 max from each moon card core
-	maxCritDmg += 14.4 * 2 * 6    // 22.4 max from each each core attribute
+	//maxCritDmg := float64(20 * 2) // 20 max from each sun card itself
+	//maxCritDmg += 22.4 * 4        // 22.4 max from each moon card core
+	//maxCritDmg += 14.4 * 2 * 6    // 14.4 max from each core attribute
+	maxCritDmg := float64(400)
 	n, err := strconv.ParseFloat(r.CritDmg, 64)
 	if err != nil || n < 0 || n > maxCritDmg {
 		return false
@@ -343,7 +344,7 @@ func (r Record) ValidateOathRegen() bool {
 		return true
 	}
 
-	n, err := strconv.Atoi(r.OathRegen)
+	n, err := strconv.ParseFloat(r.OathRegen, 64)
 	if err != nil || n < 0 || n > 40 {
 		return false
 	}
