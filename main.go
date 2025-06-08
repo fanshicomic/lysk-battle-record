@@ -16,6 +16,9 @@ const (
 )
 
 func main() {
+	imageProcessor := internal.NewScreenshotImageProcesser()
+	imageProcessor.ProcessImage("/Users/linfanshi/Desktop/image.PNG")
+
 	orbitGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, orbitSheetName)
 	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
