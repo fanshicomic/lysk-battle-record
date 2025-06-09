@@ -24,7 +24,7 @@ func (p *ScreenshotImageProcesser) ProcessImage(imagePath string) (map[string]st
 
 	err := client.SetImage(imagePath)
 	if err != nil {
-		return nil, fmt.Errorf("error setting image: ", err)
+		return nil, fmt.Errorf("error setting image: %v", err)
 	}
 
 	// **关键**: 设置识别语言为简体中文 (chi_sim)
@@ -51,8 +51,8 @@ func (p *ScreenshotImageProcesser) ProcessImage(imagePath string) (map[string]st
 	// 定义我们关心的字段
 	targetKeys := map[string]bool{
 		"生命": true, "攻击": true, "防御": true,
-		"暴击": true, "暴伤": true, "签约增伤": true,
-		"虚弱增伤": true,
+		"暴击": true, "暴伤": true, "誓约增伤": true,
+		"虚弱增伤": true, "誓约回能": true, "加速回能": true,
 	}
 
 	// 使用 strings.Fields 按空白符分割字符串
@@ -65,11 +65,14 @@ func (p *ScreenshotImageProcesser) ProcessImage(imagePath string) (map[string]st
 	for i := 0; i < len(words)-1; i++ {
 		// 清理一下识别出的词，有时候会带上奇怪的符号
 		cleanWord := strings.Trim(words[i], " ·-:")
+		if strings.Contains(cleanWord, "约增伤") {
+			cleanWord = "誓约增伤"
+		}
 
 		// 检查当前单词是否是我们要找的目标字段
 		if _, isTarget := targetKeys[cleanWord]; isTarget {
 			// 如果是，那么下一个单词就是它的值
-			extractedData[cleanWord] = words[i+1]
+			extractedData[cleanWord] = sanitizeText(words[i+1])
 		}
 	}
 
@@ -81,7 +84,7 @@ func (p *ScreenshotImageProcesser) ProcessImage(imagePath string) (map[string]st
 		fmt.Println("未能提取到任何数据，请检查 Tesseract 原始识别结果是否准确。")
 	} else {
 		// 为了美观，可以按固定顺序打印
-		printOrder := []string{"生命", "攻击", "防御", "暴击", "暴伤", "签约增伤", "虚弱增伤"}
+		printOrder := []string{"生命", "攻击", "防御", "暴击", "暴伤", "誓约增伤", "虚弱增伤", "誓约回能", "加速回能"}
 		for _, key := range printOrder {
 			if value, ok := extractedData[key]; ok {
 				fmt.Printf("  %s: %s\n", key, value)
@@ -90,4 +93,15 @@ func (p *ScreenshotImageProcesser) ProcessImage(imagePath string) (map[string]st
 	}
 
 	return extractedData, nil
+}
+
+func sanitizeText(text string) string {
+	sanizedText := strings.Map(func(r rune) rune {
+		if (r >= '0' && r <= '9') || r == '.' {
+			return r
+		}
+		return -1
+	}, text)
+
+	return sanizedText
 }
