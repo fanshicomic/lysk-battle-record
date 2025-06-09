@@ -66,10 +66,6 @@ func (r Record) ValidateCommon() (bool, error) {
 		return false, fmt.Errorf("暴击伤害错误: %s", r.CritDmg)
 	}
 
-	if !r.ValidateEnergyRegen() {
-		return false, fmt.Errorf("加速回能错误: %s", r.EnergyRegen)
-	}
-
 	if !r.ValidateWeakenBoost() {
 		return false, fmt.Errorf("虚弱增伤错误: %s", r.WeakenBoost)
 	}
@@ -80,6 +76,14 @@ func (r Record) ValidateCommon() (bool, error) {
 
 	if !r.ValidateOathRegen() {
 		return false, fmt.Errorf("誓约回能错误: %s", r.OathRegen)
+	}
+
+	if !r.ValidateEnergyRegen() {
+		return false, fmt.Errorf("加速回能错误: %s", r.EnergyRegen)
+	}
+
+	if !r.ValidateRegen() {
+		return false, fmt.Errorf("回能总和错误: %s + %s，面板总回能不能大于48", r.EnergyRegen, r.OathRegen)
 	}
 
 	if !r.ValidatePartner() {
@@ -312,6 +316,19 @@ func (r Record) ValidateEnergyRegen() bool {
 	return true
 }
 
+func (r Record) ValidateOathRegen() bool {
+	if r.OathRegen == "" {
+		return true
+	}
+
+	n, err := strconv.ParseFloat(r.OathRegen, 64)
+	if err != nil || n < 0 || n > 40 {
+		return false
+	}
+
+	return true
+}
+
 func (r Record) ValidateWeakenBoost() bool {
 	maxWeakenBoost := 18.2 * 4   // 18.2 max from each moon card core
 	maxWeakenBoost += 11 * 2 * 6 // 11 max from each core attribute
@@ -338,13 +355,11 @@ func (r Record) ValidateOathBoost() bool {
 	return true
 }
 
-func (r Record) ValidateOathRegen() bool {
-	if r.OathRegen == "" {
-		return true
-	}
+func (r Record) ValidateRegen() bool {
+	energy, _ := strconv.ParseFloat(r.EnergyRegen, 64)
+	oath, _ := strconv.ParseFloat(r.OathRegen, 64)
 
-	n, err := strconv.ParseFloat(r.OathRegen, 64)
-	if err != nil || n < 0 || n > 40 {
+	if energy+oath > 48 {
 		return false
 	}
 
