@@ -42,12 +42,12 @@ func (r Record) ValidateCommon() (bool, error) {
 		return false, fmt.Errorf("攻击数值错误: %s", r.Attack)
 	}
 
-	if !r.ValidateDefence() {
-		return false, fmt.Errorf("防御数值错误: %s", r.Defense)
+	if _, err := r.ValidateDefence(); err != nil {
+		return false, err
 	}
 
-	if !r.ValidateHP() {
-		return false, fmt.Errorf("生命数值错误: %s", r.HP)
+	if _, err := r.ValidateHP(); err != nil {
+		return false, err
 	}
 
 	if !r.ValidateMatching() {
@@ -170,32 +170,49 @@ func (r Record) ValidateAttack() bool {
 	return true
 }
 
-func (r Record) ValidateDefence() bool {
-	if r.Defense == "" {
-		return true
-	}
-
+func (r Record) ValidateDefence() (bool, error) {
 	maxDefence := 614 * 1.9 * 6
+	if r.Defense == "" {
+		r.Defense = "0"
+	}
 	n, err := strconv.ParseFloat(r.Defense, 64)
 	if err != nil || n < 0 || n > maxDefence {
-		return false
+		return false, fmt.Errorf("防御值错误: %s", r.Defense)
 	}
 
-	return true
+	defencePartner := map[string]bool{
+		"光猎":       true,
+		"永恒先知":   true,
+		"远空执舰官": true,
+	}
+
+	if _, ok := defencePartner[r.Partner]; ok && n == 0 {
+		return false, fmt.Errorf("搭档 %s 的防御值不能为 0", r.Partner)
+	}
+
+	return true, nil
 }
 
-func (r Record) ValidateHP() bool {
-	if r.HP == "" {
-		return true
-	}
-
+func (r Record) ValidateHP() (bool, error) {
 	maxHP := 24594 * 1.9 * 6
+	if r.HP == "" {
+		r.HP = "0"
+	}
 	n, err := strconv.ParseFloat(r.HP, 64)
 	if err != nil || n < 0 || n > maxHP {
-		return false
+		return false, fmt.Errorf("生命值错误: %s", r.HP)
 	}
 
-	return true
+	hpPartner := map[string]bool{
+		"潮汐之神": true,
+		"深渊主宰": true,
+	}
+
+	if _, ok := hpPartner[r.Partner]; ok && n == 0 {
+		return false, fmt.Errorf("搭档 %s 的生命值不能为 0", r.Partner)
+	}
+
+	return true, nil
 }
 
 func (r Record) ValidateMatching() bool {
