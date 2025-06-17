@@ -135,7 +135,7 @@ func (r Record) validateLevelType() bool {
 func (r Record) ValidateLevelNumber() bool {
 	maxLevelNumber := map[string]int{
 		"光":   180,
-		"火":   180,
+		"火":   210,
 		"冰":   180,
 		"能量": 150,
 		"引力": 120,
@@ -181,9 +181,10 @@ func (r Record) ValidateDefence() (bool, error) {
 	}
 
 	defencePartner := map[string]bool{
-		"光猎":       true,
-		"永恒先知":   true,
-		"远空执舰官": true,
+		"光猎":         true,
+		"永恒先知":     true,
+		"远空执舰官":   true,
+		"利莫里亚海神": true,
 	}
 
 	if _, ok := defencePartner[r.Partner]; ok && n == 0 {
@@ -269,7 +270,7 @@ func (r Record) ValidatePartnerSetCard() bool {
 			"拥雪": true, "永恒": true, "夜色": true, "静谧": true, "心晴": true, "深林": true, "无套装": true,
 		},
 		"祁煜": {
-			"神殿": true, "深海": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
+			"雾海": true, "神殿": true, "深海": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
 		},
 		"秦彻": {
 			"深渊": true, "掠心": true, "锋尖": true, "戮夜": true, "无套装": true,
@@ -283,7 +284,7 @@ func (r Record) ValidatePartnerSetCard() bool {
 	partnerToMain := map[string]string{
 		"光猎": "沈星回", "逐光骑士": "沈星回", "遥远少年": "沈星回", "Evol特警": "沈星回", "深空猎人": "沈星回",
 		"九黎司命": "黎深", "永恒先知": "黎深", "极地军医": "黎深", "黎明抹杀者": "黎深", "临空医生": "黎深",
-		"潮汐之神": "祁煜", "深海潜行者": "祁煜", "画坛新锐": "祁煜", "海妖魅影": "祁煜", "艺术家": "祁煜",
+		"利莫里亚海神": "祁煜", "潮汐之神": "祁煜", "深海潜行者": "祁煜", "画坛新锐": "祁煜", "海妖魅影": "祁煜", "艺术家": "祁煜",
 		"深渊主宰": "秦彻", "无尽掠夺者": "秦彻", "异界来客": "秦彻",
 		"终极兵器X-02": "夏以昼", "远空执舰官": "夏以昼", "深空飞行员": "夏以昼",
 	}
@@ -395,6 +396,7 @@ func (r Record) ValidatePartner() bool {
 		"极地军医":     true,
 		"黎明抹杀者":   true,
 		"临空医生":     true,
+		"利莫里亚海神": true,
 		"潮汐之神":     true,
 		"深海潜行者":   true,
 		"画坛新锐":     true,
@@ -424,6 +426,7 @@ func (r Record) ValidateSetCard() bool {
 		"夜色":   true,
 		"静谧":   true,
 		"深林":   true,
+		"雾海":   true,
 		"神殿":   true,
 		"深海":   true,
 		"点染":   true,
