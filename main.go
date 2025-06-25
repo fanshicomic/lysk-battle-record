@@ -31,10 +31,11 @@ func main() {
 
 	r := gin.Default()
 
-	allowOrigins := []string{"https://uygnim.com"}
-	if isLocal() {
-		allowOrigins = []string{"*"}
-	}
+	//allowOrigins := []string{"https://uygnim.com"}
+	//if isLocal() {
+	//	allowOrigins = []string{"*"}
+	//}
+	allowOrigins := []string{"*"}
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     allowOrigins,
