@@ -270,7 +270,7 @@ func (r Record) ValidatePartnerSetCard() bool {
 			"拥雪": true, "永恒": true, "夜色": true, "静谧": true, "心晴": true, "深林": true, "无套装": true,
 		},
 		"祁煜": {
-			"雾海": true, "神殿": true, "深海": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
+			"雾海": true, "神殿": true, "深海": true, "坠浪": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
 		},
 		"秦彻": {
 			"深渊": true, "掠心": true, "锋尖": true, "戮夜": true, "无套装": true,
@@ -429,6 +429,7 @@ func (r Record) ValidateSetCard() bool {
 		"雾海":   true,
 		"神殿":   true,
 		"深海":   true,
+		"坠浪":   true,
 		"点染":   true,
 		"斑斓":   true,
 		"碧海":   true,
