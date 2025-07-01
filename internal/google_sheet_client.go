@@ -93,6 +93,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 
 		r.LevelType = fmt.Sprint(c.getValue(row, headerIndexMap, "关卡"))
 		r.LevelNumber = fmt.Sprint(c.getValue(row, headerIndexMap, "关数"))
+		r.LevelMode = fmt.Sprint(c.getValue(row, headerIndexMap, "模式"))
 		r.Attack = fmt.Sprint(c.getValue(row, headerIndexMap, "攻击"))
 		r.HP = fmt.Sprint(c.getValue(row, headerIndexMap, "生命"))
 		r.Defense = fmt.Sprint(c.getValue(row, headerIndexMap, "防御"))
@@ -146,6 +147,8 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 			row[index] = record.LevelType
 		case "关数":
 			row[index] = record.LevelNumber
+		case "模式":
+			row[index] = record.LevelMode
 		case "攻击":
 			row[index] = record.Attack
 		case "防御":

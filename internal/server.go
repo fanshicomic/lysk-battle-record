@@ -58,6 +58,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record := Record{}
 	record.LevelType = fmt.Sprintf("%v", input["关卡"])
 	record.LevelNumber = fmt.Sprintf("%v", input["关数"])
+	record.LevelMode = fmt.Sprintf("%v", input["模式"])
 	record.Attack = fmt.Sprintf("%v", input["攻击"])
 	record.HP = fmt.Sprintf("%v", input["生命"])
 	record.Defense = fmt.Sprintf("%v", input["防御"])
@@ -122,13 +123,19 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
 	levelType := c.Query("type")
 	levelNum := c.Query("level")
+	levelMode := c.Query("mode")
 	offsetStr := c.DefaultQuery("offset", "0")
 	offset, _ := strconv.Atoi(offsetStr)
+
+	if levelMode == "" {
+		levelMode = "稳定"
+	}
 
 	record := s.orbitRecordStore.Query(QueryOptions{
 		Filters: map[string]string{
 			"关卡": levelType,
 			"关数": levelNum,
+			"模式": levelMode,
 		},
 		Offset: offset,
 	})

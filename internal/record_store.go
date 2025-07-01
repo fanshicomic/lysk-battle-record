@@ -143,6 +143,8 @@ func getFilters(key, value string) func(Record) bool {
 			return r.LevelType == value
 		case "关数":
 			return r.LevelNumber == value
+		case "模式":
+			return r.LevelMode == value
 		case "搭档身份":
 			return r.Partner == value
 		case "日卡":

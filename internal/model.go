@@ -13,6 +13,7 @@ import (
 type Record struct {
 	LevelType      string `json:"关卡"`
 	LevelNumber    string `json:"关数"`
+	LevelMode      string `json:"模式"`
 	Attack         string `json:"攻击"`
 	HP             string `json:"生命"`
 	Defense        string `json:"防御"`
@@ -155,6 +156,23 @@ func (r Record) ValidateLevelNumber() bool {
 		if !isValidNumber || !isValidPart {
 			return false
 		}
+	}
+
+	return true
+}
+
+func (r Record) ValidateLevelMode() bool {
+	validModes := map[string]bool{
+		"稳定": true,
+		"波动": true,
+	}
+
+	if !validModes[r.LevelMode] {
+		return false
+	}
+
+	if r.LevelType != "开放" && r.LevelMode == "波动" {
+		return false
 	}
 
 	return true
@@ -464,6 +482,10 @@ func (r Record) ValidateOrbit() (bool, error) {
 		return false, fmt.Errorf("关数错误: %s - %s", r.LevelType, r.LevelNumber)
 	}
 
+	if !r.ValidateLevelMode() {
+		return false, fmt.Errorf("关卡模式错误: %s", r.LevelMode)
+	}
+
 	return r.ValidateCommon()
 }
 
@@ -476,8 +498,8 @@ func (r Record) ValidateChampionships() (bool, error) {
 }
 
 func (r Record) getHash() string {
-	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-		r.LevelType, r.LevelNumber, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuffer,
+	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuffer,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
 		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buffer,
 	)
