@@ -11,26 +11,26 @@ import (
 )
 
 type Record struct {
-	LevelType      string `json:"关卡"`
-	LevelNumber    string `json:"关数"`
-	LevelMode      string `json:"模式"`
-	Attack         string `json:"攻击"`
-	HP             string `json:"生命"`
-	Defense        string `json:"防御"`
-	Matching       string `json:"对谱"`
-	MatchingBuffer string `json:"对谱加成"`
-	CritRate       string `json:"暴击"`
-	CritDmg        string `json:"暴伤"`
-	EnergyRegen    string `json:"加速回能"`
-	WeakenBoost    string `json:"虚弱增伤"`
-	OathBoost      string `json:"誓约增伤"`
-	OathRegen      string `json:"誓约回能"`
-	Partner        string `json:"搭档身份"`
-	SetCard        string `json:"日卡"`
-	Stage          string `json:"阶数"`
-	Weapon         string `json:"武器"`
-	Buffer         string `json:"加成"`
-	Time           string `json:"时间"` // 可额外解析为 time.Time
+	LevelType    string `json:"关卡"`
+	LevelNumber  string `json:"关数"`
+	LevelMode    string `json:"模式"`
+	Attack       string `json:"攻击"`
+	HP           string `json:"生命"`
+	Defense      string `json:"防御"`
+	Matching     string `json:"对谱"`
+	MatchingBuff string `json:"对谱加成"`
+	CritRate     string `json:"暴击"`
+	CritDmg      string `json:"暴伤"`
+	EnergyRegen  string `json:"加速回能"`
+	WeakenBoost  string `json:"虚弱增伤"`
+	OathBoost    string `json:"誓约增伤"`
+	OathRegen    string `json:"誓约回能"`
+	Partner      string `json:"搭档身份"`
+	SetCard      string `json:"日卡"`
+	Stage        string `json:"阶数"`
+	Weapon       string `json:"武器"`
+	Buff         string `json:"加成"`
+	Time         string `json:"时间"` // 可额外解析为 time.Time
 }
 type Records []Record
 
@@ -55,8 +55,8 @@ func (r Record) ValidateCommon() (bool, error) {
 		return false, fmt.Errorf("对谱类型错误: %s", r.Matching)
 	}
 
-	if !r.ValidateMatchingBuffer() {
-		return false, fmt.Errorf("对谱加成错误: %s", r.MatchingBuffer)
+	if !r.ValidateMatchingBuff() {
+		return false, fmt.Errorf("对谱加成错误: %s", r.MatchingBuff)
 	}
 
 	if !r.ValidateCritRate() {
@@ -243,8 +243,8 @@ func (r Record) ValidateMatching() bool {
 	return validMatching[r.Matching]
 }
 
-func (r Record) ValidateMatchingBuffer() bool {
-	validMatchingBuffer := map[string]bool{
+func (r Record) ValidateMatchingBuff() bool {
+	validMatchingBuff := map[string]bool{
 		"30":     true,
 		"25":     true,
 		"20":     true,
@@ -254,7 +254,7 @@ func (r Record) ValidateMatchingBuffer() bool {
 		"0":      true,
 		"不确定": true,
 	}
-	return validMatchingBuffer[r.MatchingBuffer]
+	return validMatchingBuff[r.MatchingBuff]
 }
 
 func (r Record) ValidateWeapon() bool {
@@ -268,15 +268,15 @@ func (r Record) ValidateWeapon() bool {
 	return validWeapons[r.Weapon]
 }
 
-func (r Record) ValidateBuffer() bool {
-	validBuffers := map[string]bool{
+func (r Record) ValidateBuff() bool {
+	validBuffs := map[string]bool{
 		"0":  true,
 		"10": true,
 		"20": true,
 		"30": true,
 		"40": true,
 	}
-	return validBuffers[r.Buffer]
+	return validBuffs[r.Buff]
 }
 
 func (r Record) ValidatePartnerSetCard() bool {
@@ -490,8 +490,8 @@ func (r Record) ValidateOrbit() (bool, error) {
 }
 
 func (r Record) ValidateChampionships() (bool, error) {
-	if !r.ValidateBuffer() {
-		return false, fmt.Errorf("锦标赛加成错误: %s", r.Buffer)
+	if !r.ValidateBuff() {
+		return false, fmt.Errorf("锦标赛加成错误: %s", r.Buff)
 	}
 
 	return r.ValidateCommon()
@@ -499,9 +499,9 @@ func (r Record) ValidateChampionships() (bool, error) {
 
 func (r Record) getHash() string {
 	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuffer,
+		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuff,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
-		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buffer,
+		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

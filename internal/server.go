@@ -63,7 +63,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.HP = fmt.Sprintf("%v", input["生命"])
 	record.Defense = fmt.Sprintf("%v", input["防御"])
 	record.Matching = fmt.Sprintf("%v", input["对谱"])
-	record.MatchingBuffer = fmt.Sprintf("%v", input["对谱加成"])
+	record.MatchingBuff = fmt.Sprintf("%v", input["对谱加成"])
 	record.CritRate = fmt.Sprintf("%v", input["暴击"])
 	record.CritDmg = fmt.Sprintf("%v", input["暴伤"])
 	record.EnergyRegen = fmt.Sprintf("%v", input["加速回能"])
@@ -156,7 +156,7 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	record.HP = fmt.Sprintf("%v", input["生命"])
 	record.Defense = fmt.Sprintf("%v", input["防御"])
 	record.Matching = fmt.Sprintf("%v", input["对谱"])
-	record.MatchingBuffer = fmt.Sprintf("%v", input["对谱加成"])
+	record.MatchingBuff = fmt.Sprintf("%v", input["对谱加成"])
 	record.CritRate = fmt.Sprintf("%v", input["暴击"])
 	record.CritDmg = fmt.Sprintf("%v", input["暴伤"])
 	record.EnergyRegen = fmt.Sprintf("%v", input["加速回能"])
@@ -167,7 +167,7 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	record.SetCard = fmt.Sprintf("%v", input["日卡"])
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
-	record.Buffer = fmt.Sprintf("%v", input["加成"])
+	record.Buff = fmt.Sprintf("%v", input["加成"])
 
 	if _, err := record.ValidateChampionships(); err != nil {
 		logrus.Errorf("[Championships] Record validation failed: %v", err)

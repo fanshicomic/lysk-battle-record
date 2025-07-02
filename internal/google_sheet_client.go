@@ -98,7 +98,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.HP = fmt.Sprint(c.getValue(row, headerIndexMap, "生命"))
 		r.Defense = fmt.Sprint(c.getValue(row, headerIndexMap, "防御"))
 		r.Matching = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱"))
-		r.MatchingBuffer = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱加成"))
+		r.MatchingBuff = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱加成"))
 		r.CritRate = fmt.Sprint(c.getValue(row, headerIndexMap, "暴击"))
 		r.CritDmg = fmt.Sprint(c.getValue(row, headerIndexMap, "暴伤"))
 		r.EnergyRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "加速回能"))
@@ -109,7 +109,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.SetCard = fmt.Sprint(c.getValue(row, headerIndexMap, "日卡"))
 		r.Stage = fmt.Sprint(c.getValue(row, headerIndexMap, "阶数"))
 		r.Weapon = fmt.Sprint(c.getValue(row, headerIndexMap, "武器"))
-		r.Buffer = fmt.Sprint(c.getValue(row, headerIndexMap, "加成"))
+		r.Buff = fmt.Sprint(c.getValue(row, headerIndexMap, "加成"))
 		r.Time = fmt.Sprint(c.getValue(row, headerIndexMap, "时间"))
 
 		records = append(records, r)
@@ -158,7 +158,7 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 		case "对谱":
 			row[index] = record.Matching
 		case "对谱加成":
-			row[index] = record.MatchingBuffer
+			row[index] = record.MatchingBuff
 		case "暴击":
 			row[index] = record.CritRate
 		case "暴伤":
@@ -180,7 +180,7 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 		case "武器":
 			row[index] = record.Weapon
 		case "加成":
-			row[index] = record.Buffer
+			row[index] = record.Buff
 		case "时间":
 			row[index] = record.Time
 		default:
