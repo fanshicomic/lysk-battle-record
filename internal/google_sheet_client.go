@@ -67,7 +67,7 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 }
 
 func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:S").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:W").Do()
 	if err != nil {
 		return nil, err
 	}
