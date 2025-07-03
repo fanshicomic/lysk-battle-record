@@ -1,11 +1,13 @@
 package main
 
 import (
+	"log"
 	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"lysk-battle-record/internal"
 )
 
@@ -16,6 +18,10 @@ const (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	orbitGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, orbitSheetName)
 	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
@@ -27,6 +33,7 @@ func main() {
 		orbitGoogleSheetClient,
 		championshipsRecordStore,
 		championshipsGoogleSheetClient,
+		internal.NewAuthenticator(),
 	)
 
 	r := gin.Default()
@@ -40,18 +47,23 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     allowOrigins,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           1 * time.Hour,
 	}))
 
 	r.GET("/ping", server.Ping)
+	r.POST("/login", server.Login)
 
-	r.POST("/orbit-record", server.ProcessOrbitRecord)
+	authRequired := r.Group("/")
+	authRequired.Use(server.AuthMiddleware())
+	{
+		authRequired.POST("/orbit-record", server.ProcessOrbitRecord)
+		authRequired.POST("/championships-record", server.ProcessChampionshipsRecord)
+	}
+
 	r.GET("/orbit-records", server.GetOrbitRecords)
-
-	r.POST("/championships-record", server.ProcessChampionshipsRecord)
 	r.GET("/championships-records", server.GetChampionshipsRecords)
 
 	r.GET("/latest-orbit-records", server.GetLatestOrbitRecords)

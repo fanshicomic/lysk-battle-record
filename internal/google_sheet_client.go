@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -16,7 +14,6 @@ type GoogleSheetClient interface {
 	FetchAllSheetData() ([]Record, error)
 	ProcessRecord(record Record) error
 	GetType() string
-	MarkAllAsExpired() error
 }
 
 type GoogleSheetClientImpl struct {
@@ -82,7 +79,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		}
 	}
 
-	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:S").Do()
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:W").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +108,7 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.Weapon = fmt.Sprint(c.getValue(row, headerIndexMap, "武器"))
 		r.Buff = fmt.Sprint(c.getValue(row, headerIndexMap, "加成"))
 		r.Time = fmt.Sprint(c.getValue(row, headerIndexMap, "时间"))
+		r.UserID = fmt.Sprint(c.getValue(row, headerIndexMap, "用户ID"))
 
 		records = append(records, r)
 	}
@@ -126,7 +124,7 @@ func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[s
 }
 
 func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:S").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:W").Do()
 	if err != nil {
 		return err
 	}
@@ -183,6 +181,8 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 			row[index] = record.Buff
 		case "时间":
 			row[index] = record.Time
+		case "用户ID":
+			row[index] = record.UserID
 		default:
 		}
 	}
@@ -200,77 +200,4 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 
 func (c *GoogleSheetClientImpl) GetType() string {
 	return c.sheetName
-}
-
-func (c *GoogleSheetClientImpl) MarkAllAsExpired() error {
-	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
-	if err != nil {
-		logrus.Errorf("failed to read sheet %s with error: %v", c.sheetName, err)
-		return err
-	}
-
-	if len(resp.Values) == 0 {
-		logrus.Infof("%s sheet is empty", c.sheetName)
-		return nil
-	}
-
-	headers := resp.Values[0]
-	expiredCol := -1
-	for i, h := range headers {
-		if h == "已过期" {
-			expiredCol = i
-			break
-		}
-	}
-	if expiredCol == -1 {
-		logrus.Error("expired column not found")
-		return fmt.Errorf("未找到 '已过期' 字段")
-	}
-
-	// 计算哪些需要更新
-	var updates []*sheets.Request
-	sheetId := int64(1105225329)
-	for rowIndex, row := range resp.Values[1:] {
-		// 记录从第2行开始（index 1），所以 +2 表示行号
-		rowNum := rowIndex + 2
-
-		// 如果已过期字段存在且已经是 true，跳过
-		if expiredCol < len(row) && strings.TrimSpace(fmt.Sprint(row[expiredCol])) == "true" {
-			continue
-		}
-
-		// 构造更新请求
-		updates = append(updates, &sheets.Request{
-			UpdateCells: &sheets.UpdateCellsRequest{
-				Range: &sheets.GridRange{
-					SheetId:          sheetId, // 你需要先获取实际的 sheetId
-					StartRowIndex:    int64(rowNum - 1),
-					EndRowIndex:      int64(rowNum),
-					StartColumnIndex: int64(expiredCol),
-					EndColumnIndex:   int64(expiredCol + 1),
-				},
-				Rows: []*sheets.RowData{{
-					Values: []*sheets.CellData{{
-						UserEnteredValue: &sheets.ExtendedValue{BoolValue: googleapi.Bool(true)},
-					}},
-				}},
-				Fields: "userEnteredValue",
-			},
-		})
-	}
-
-	if len(updates) == 0 {
-		logrus.Info("All records are already marked as expired")
-		return nil
-	}
-
-	_, err = c.srv.Spreadsheets.BatchUpdate(c.sheetId, &sheets.BatchUpdateSpreadsheetRequest{
-		Requests: updates,
-	}).Do()
-	if err != nil {
-		return fmt.Errorf("sheet %s failed to update for expiration: %w", c.sheetName, err)
-	}
-
-	logrus.Infof("updated %d records to expired", len(updates))
-	return nil
 }

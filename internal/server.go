@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,8 @@ import (
 
 type Server interface {
 	Ping(c *gin.Context)
+	Login(c *gin.Context)
+	AuthMiddleware() gin.HandlerFunc
 
 	ProcessOrbitRecord(c *gin.Context)
 	GetOrbitRecords(c *gin.Context)
@@ -23,28 +26,74 @@ type Server interface {
 }
 
 func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient GoogleSheetClient,
-	championshipsRecordStore RecordStore, championshipsSheetClient GoogleSheetClient) Server {
+	championshipsRecordStore RecordStore, championshipsSheetClient GoogleSheetClient, auth *Authenticator) Server {
 
 	return &LyskServer{
 		orbitRecordStore:         orbitRecordStore,
 		orbitSheetClient:         orbitSheetClient,
 		championshipsRecordStore: championshipsRecordStore,
 		championshipsSheetClient: championshipsSheetClient,
+		auth:                     auth,
 	}
 }
 
 type LyskServer struct {
-	orbitRecordStore RecordStore
-	orbitSheetClient GoogleSheetClient
-
+	orbitRecordStore         RecordStore
+	orbitSheetClient         GoogleSheetClient
 	championshipsRecordStore RecordStore
 	championshipsSheetClient GoogleSheetClient
+	auth                     *Authenticator
 
 	Lottery *Lottery
 }
 
 func (s *LyskServer) Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+func (s *LyskServer) Login(c *gin.Context) {
+	var req struct {
+		Code string `json:"code"`
+	}
+
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	token, err := s.auth.Login(req.Code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (s *LyskServer) AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.Next()
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.Next()
+			return
+		}
+
+		tokenString := parts[1]
+		userID, err := s.auth.ValidateJWT(tokenString)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		c.Set("userID", userID)
+		c.Next()
+	}
 }
 
 func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
@@ -56,6 +105,10 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	}
 
 	record := Record{}
+	if userID, exists := c.Get("userID"); exists {
+		record.UserID = userID.(string)
+	}
+
 	record.LevelType = fmt.Sprintf("%v", input["关卡"])
 	record.LevelNumber = fmt.Sprintf("%v", input["关数"])
 	record.LevelMode = fmt.Sprintf("%v", input["模式"])
@@ -151,6 +204,10 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	}
 
 	record := Record{}
+	if userID, exists := c.Get("userID"); exists {
+		record.UserID = userID.(string)
+	}
+
 	record.LevelType = fmt.Sprintf("%v", input["关卡"])
 	record.Attack = fmt.Sprintf("%v", input["攻击"])
 	record.HP = fmt.Sprintf("%v", input["生命"])

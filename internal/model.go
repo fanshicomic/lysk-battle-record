@@ -31,7 +31,14 @@ type Record struct {
 	Weapon       string `json:"武器"`
 	Buff         string `json:"加成"`
 	Time         string `json:"时间"` // 可额外解析为 time.Time
+	UserID       string `json:"userID"`
 }
+
+type User struct {
+	OpenID     string `json:"openid"`
+	SessionKey string `json:"session_key"`
+}
+
 type Records []Record
 
 func (r Record) ValidateCommon() (bool, error) {
