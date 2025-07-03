@@ -12,7 +12,7 @@ import (
 
 const (
 	spreadsheetID     = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
-	orbitSheetName    = "轨道测试"
+	orbitSheetName    = "轨道"
 	championSheetName = "锦标赛"
 )
 
