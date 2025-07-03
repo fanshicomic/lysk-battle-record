@@ -1,27 +1,23 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+
 	"lysk-battle-record/internal"
 )
 
 const (
 	spreadsheetID     = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
-	orbitSheetName    = "轨道"
+	orbitSheetName    = "轨道测试"
 	championSheetName = "锦标赛"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+
 	orbitGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, orbitSheetName)
 	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
