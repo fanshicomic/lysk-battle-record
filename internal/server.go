@@ -333,6 +333,8 @@ func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
 
 func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 	userId, exists := c.Get("userID")
+	offsetStr := c.DefaultQuery("offset", "0")
+	offset, _ := strconv.Atoi(offsetStr)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
 		return
@@ -342,6 +344,7 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 		Filters: map[string]string{
 			"用户ID": userId.(string),
 		},
+		Offset: offset,
 	})
 	c.JSON(http.StatusOK, record)
 }
