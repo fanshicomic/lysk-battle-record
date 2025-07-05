@@ -57,6 +57,8 @@ func main() {
 	{
 		authRequired.POST("/orbit-record", server.ProcessOrbitRecord)
 		authRequired.POST("/championships-record", server.ProcessChampionshipsRecord)
+		authRequired.GET("/my-orbit-record", server.GetMyOrbitRecords)
+		authRequired.GET("/all-my-orbit-records", server.GetAllMyOrbitRecords)
 	}
 
 	r.GET("/orbit-records", server.GetOrbitRecords)

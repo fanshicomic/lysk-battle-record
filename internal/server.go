@@ -18,11 +18,15 @@ type Server interface {
 
 	ProcessOrbitRecord(c *gin.Context)
 	GetOrbitRecords(c *gin.Context)
-	GetLatestOrbitRecords(c *gin.Context)
+	GetMyOrbitRecords(c *gin.Context)
 
 	ProcessChampionshipsRecord(c *gin.Context)
+	GetLatestOrbitRecords(c *gin.Context)
+
 	GetChampionshipsRecords(c *gin.Context)
 	GetLatestChampionshipsRecords(c *gin.Context)
+
+	GetAllMyOrbitRecords(c *gin.Context)
 }
 
 func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient GoogleSheetClient,
@@ -195,6 +199,34 @@ func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
+func (s *LyskServer) GetMyOrbitRecords(c *gin.Context) {
+	levelType := c.Query("type")
+	levelNum := c.Query("level")
+	levelMode := c.Query("mode")
+	offsetStr := c.DefaultQuery("offset", "0")
+	offset, _ := strconv.Atoi(offsetStr)
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+
+	if levelMode == "" {
+		levelMode = "稳定"
+	}
+
+	record := s.orbitRecordStore.Query(QueryOptions{
+		Filters: map[string]string{
+			"关卡":   levelType,
+			"关数":   levelNum,
+			"模式":   levelMode,
+			"用户ID": userId.(string),
+		},
+		Offset: offset,
+	})
+	c.JSON(http.StatusOK, record)
+}
+
 func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	var input map[string]interface{}
 	if err := c.BindJSON(&input); err != nil {
@@ -295,6 +327,21 @@ func (s *LyskServer) GetLatestOrbitRecords(c *gin.Context) {
 func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
 	record := s.championshipsRecordStore.Query(QueryOptions{
 		Limit: 5,
+	})
+	c.JSON(http.StatusOK, record)
+}
+
+func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+
+	record := s.orbitRecordStore.Query(QueryOptions{
+		Filters: map[string]string{
+			"用户ID": userId.(string),
+		},
 	})
 	c.JSON(http.StatusOK, record)
 }

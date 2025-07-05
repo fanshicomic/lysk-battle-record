@@ -153,6 +153,8 @@ func getFilters(key, value string) func(Record) bool {
 			return r.Stage == value
 		case "武器":
 			return r.Weapon == value
+		case "用户ID":
+			return r.UserID == value
 		default:
 			return true
 		}
