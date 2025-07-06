@@ -147,7 +147,7 @@ func (r Record) ValidateLevelNumber() bool {
 		"冰":   180,
 		"能量": 150,
 		"引力": 120,
-		"开放": 240,
+		"开放": 300,
 	}
 	levelInfo := strings.Split(r.LevelNumber, "_")
 	var levelPart string
