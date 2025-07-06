@@ -141,13 +141,22 @@ func (r Record) validateLevelType() bool {
 }
 
 func (r Record) ValidateLevelNumber() bool {
-	maxLevelNumber := map[string]int{
+	maxEasyLevelNumber := map[string]int{
 		"光":   180,
 		"火":   210,
 		"冰":   180,
 		"能量": 150,
 		"引力": 120,
 		"开放": 300,
+	}
+
+	maxHardLevelNumber := map[string]int{
+		"光":   0,
+		"火":   0,
+		"冰":   0,
+		"能量": 0,
+		"引力": 0,
+		"开放": 60,
 	}
 	levelInfo := strings.Split(r.LevelNumber, "_")
 	var levelPart string
@@ -157,12 +166,12 @@ func (r Record) ValidateLevelNumber() bool {
 	}
 
 	levelNumber, _ := strconv.Atoi(levelInfo[0])
-	if r.LevelType != "A4" && r.LevelType != "B4" && r.LevelType != "C4" {
-		isValidNumber := levelNumber > 0 && levelNumber <= maxLevelNumber[r.LevelType]
-		isValidPart := (levelNumber%10 != 0 && levelPart == "") || (levelNumber%10 == 0 && levelPart == "上" || levelPart == "下")
-		if !isValidNumber || !isValidPart {
-			return false
-		}
+	validEasyLevelNumber := r.LevelMode == "稳定" && levelNumber <= maxEasyLevelNumber[r.LevelType]
+	validHardLevelNumber := r.LevelMode == "波动" && levelNumber <= maxHardLevelNumber[r.LevelType]
+	isValidNumber := levelNumber > 0 && (validEasyLevelNumber || validHardLevelNumber)
+	isValidPart := (levelNumber%10 != 0 && levelPart == "") || (levelNumber%10 == 0 && levelPart == "上" || levelPart == "下")
+	if !isValidNumber || !isValidPart {
+		return false
 	}
 
 	return true
@@ -486,7 +495,7 @@ func (r Record) ValidateStage() bool {
 
 func (r Record) ValidateOrbit() (bool, error) {
 	if !r.ValidateLevelNumber() {
-		return false, fmt.Errorf("关数错误: %s - %s", r.LevelType, r.LevelNumber)
+		return false, fmt.Errorf("关数错误: %s - %s - %s", r.LevelType, r.LevelMode, r.LevelNumber)
 	}
 
 	if !r.ValidateLevelMode() {
