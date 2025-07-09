@@ -39,6 +39,12 @@ type User struct {
 	SessionKey string `json:"session_key"`
 }
 
+type RankingItem struct {
+	OpenID       string `json:"openid"`
+	Contribution int32  `json:"contribution"`
+	Rank         int    `json:"rank"`
+}
+
 type Records []Record
 
 func (r Record) ValidateCommon() (bool, error) {
@@ -127,33 +133,33 @@ func (r Record) ValidateCommon() (bool, error) {
 
 func (r Record) validateLevelType() bool {
 	validTypes := map[string]bool{
-		"光":   true,
-		"火":   true,
-		"冰":   true,
+		"光":  true,
+		"火":  true,
+		"冰":  true,
 		"能量": true,
 		"引力": true,
 		"开放": true,
-		"A4":   true,
-		"B4":   true,
-		"C4":   true,
+		"A4": true,
+		"B4": true,
+		"C4": true,
 	}
 	return validTypes[r.LevelType]
 }
 
 func (r Record) ValidateLevelNumber() bool {
 	maxEasyLevelNumber := map[string]int{
-		"光":   180,
-		"火":   210,
-		"冰":   180,
+		"光":  180,
+		"火":  210,
+		"冰":  180,
 		"能量": 150,
 		"引力": 120,
 		"开放": 300,
 	}
 
 	maxHardLevelNumber := map[string]int{
-		"光":   0,
-		"火":   0,
-		"冰":   0,
+		"光":  0,
+		"火":  0,
+		"冰":  0,
 		"能量": 0,
 		"引力": 0,
 		"开放": 60,
@@ -215,9 +221,9 @@ func (r Record) ValidateDefence() (bool, error) {
 	}
 
 	defencePartner := map[string]bool{
-		"光猎":         true,
-		"永恒先知":     true,
-		"远空执舰官":   true,
+		"光猎":     true,
+		"永恒先知":   true,
+		"远空执舰官":  true,
 		"利莫里亚海神": true,
 	}
 
@@ -252,8 +258,8 @@ func (r Record) ValidateHP() (bool, error) {
 
 func (r Record) ValidateMatching() bool {
 	validMatching := map[string]bool{
-		"顺":     true,
-		"逆":     true,
+		"顺":   true,
+		"逆":   true,
 		"不确定": true,
 	}
 	return validMatching[r.Matching]
@@ -261,13 +267,13 @@ func (r Record) ValidateMatching() bool {
 
 func (r Record) ValidateMatchingBuff() bool {
 	validMatchingBuff := map[string]bool{
-		"30":     true,
-		"25":     true,
-		"20":     true,
-		"15":     true,
-		"10":     true,
-		"5":      true,
-		"0":      true,
+		"30":  true,
+		"25":  true,
+		"20":  true,
+		"15":  true,
+		"10":  true,
+		"5":   true,
+		"0":   true,
 		"不确定": true,
 	}
 	return validMatchingBuff[r.MatchingBuff]
@@ -275,10 +281,10 @@ func (r Record) ValidateMatchingBuff() bool {
 
 func (r Record) ValidateWeapon() bool {
 	validWeapons := map[string]bool{
-		"专武":   true,
-		"重剑":   true,
-		"手枪":   true,
-		"法杖":   true,
+		"专武":  true,
+		"重剑":  true,
+		"手枪":  true,
+		"法杖":  true,
 		"单手剑": true,
 	}
 	return validWeapons[r.Weapon]
@@ -420,28 +426,28 @@ func (r Record) ValidateRegen() bool {
 
 func (r Record) ValidatePartner() bool {
 	validPartner := map[string]bool{
-		"光猎":         true,
+		"光猎":       true,
 		"逐光骑士":     true,
 		"遥远少年":     true,
-		"Evol特警":     true,
+		"Evol特警":   true,
 		"深空猎人":     true,
 		"九黎司命":     true,
 		"永恒先知":     true,
 		"极地军医":     true,
-		"黎明抹杀者":   true,
+		"黎明抹杀者":    true,
 		"临空医生":     true,
-		"利莫里亚海神": true,
+		"利莫里亚海神":   true,
 		"潮汐之神":     true,
-		"深海潜行者":   true,
+		"深海潜行者":    true,
 		"画坛新锐":     true,
 		"海妖魅影":     true,
-		"艺术家":       true,
+		"艺术家":      true,
 		"深渊主宰":     true,
-		"无尽掠夺者":   true,
+		"无尽掠夺者":    true,
 		"异界来客":     true,
 		"终极兵器X-02": true,
-		"远空执舰官":   true,
-		"深空飞行员":   true,
+		"远空执舰官":    true,
+		"深空飞行员":    true,
 	}
 
 	return validPartner[r.Partner]
@@ -449,32 +455,32 @@ func (r Record) ValidatePartner() bool {
 
 func (r Record) ValidateSetCard() bool {
 	validSetCard := map[string]bool{
-		"末夜":   true,
-		"逐光":   true,
-		"睱日":   true,
-		"弦光":   true,
-		"心晴":   true,
-		"匿光":   true,
-		"拥雪":   true,
-		"永恒":   true,
-		"夜色":   true,
-		"静谧":   true,
-		"深林":   true,
-		"雾海":   true,
-		"神殿":   true,
-		"深海":   true,
-		"坠浪":   true,
-		"点染":   true,
-		"斑斓":   true,
-		"碧海":   true,
-		"深渊":   true,
-		"掠心":   true,
-		"锋尖":   true,
-		"戮夜":   true,
-		"寂路":   true,
-		"远空":   true,
-		"长昼":   true,
-		"离途":   true,
+		"末夜":  true,
+		"逐光":  true,
+		"睱日":  true,
+		"弦光":  true,
+		"心晴":  true,
+		"匿光":  true,
+		"拥雪":  true,
+		"永恒":  true,
+		"夜色":  true,
+		"静谧":  true,
+		"深林":  true,
+		"雾海":  true,
+		"神殿":  true,
+		"深海":  true,
+		"坠浪":  true,
+		"点染":  true,
+		"斑斓":  true,
+		"碧海":  true,
+		"深渊":  true,
+		"掠心":  true,
+		"锋尖":  true,
+		"戮夜":  true,
+		"寂路":  true,
+		"远空":  true,
+		"长昼":  true,
+		"离途":  true,
 		"无套装": true,
 	}
 
@@ -483,10 +489,10 @@ func (r Record) ValidateSetCard() bool {
 
 func (r Record) ValidateStage() bool {
 	validStages := map[string]bool{
-		"I":      true,
-		"II":     true,
-		"III":    true,
-		"IV":     true,
+		"I":   true,
+		"II":  true,
+		"III": true,
+		"IV":  true,
 		"无套装": true,
 	}
 

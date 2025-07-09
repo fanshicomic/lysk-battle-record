@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"sort"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ type RecordStore interface {
 	Insert(record Record)
 	PrepareInsert(record Record) error
 	IsDuplicate(record Record) bool
+	GetRanking(userId string) []RankingItem
 }
 
 type InMemoryRecordStore struct {
@@ -22,6 +24,7 @@ type InMemoryRecordStore struct {
 	recordsHash    map[string]bool
 	ingestPoolHash map[string]bool
 	sheetClient    GoogleSheetClient
+	ranking        []RankingItem
 }
 
 type QueryOptions struct {
@@ -60,8 +63,29 @@ func (s *InMemoryRecordStore) refresh() {
 		return
 	}
 
+	contribution := map[string]int32{}
+	for _, record := range data {
+		if len(record.UserID) > 0 && record.UserID != "<nil>" {
+			contribution[record.UserID] += 1
+		}
+	}
+
+	ranking := []RankingItem{}
+
+	for userId, count := range contribution {
+		ranking = append(ranking, RankingItem{
+			OpenID:       userId,
+			Contribution: count,
+		})
+	}
+
+	sort.Slice(ranking, func(i, j int) bool {
+		return ranking[i].Contribution > ranking[j].Contribution
+	})
+
 	s.mu.Lock()
 	s.records = data
+	s.ranking = ranking
 	s.mu.Unlock()
 
 	s.recordsHash = map[string]bool{}
@@ -134,6 +158,48 @@ func (s *InMemoryRecordStore) IsDuplicate(record Record) bool {
 	defer s.mu.RUnlock()
 
 	return s.recordsHash[record.getHash()] || s.ingestPoolHash[record.getHash()]
+}
+
+func (s *InMemoryRecordStore) GetRanking(userId string) []RankingItem {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	limit := 10
+
+	processedRanking := []RankingItem{}
+	rank := 1
+	for i, item := range s.ranking {
+		if i > 0 && item.Contribution < s.ranking[i-1].Contribution {
+			rank = i + 1
+		}
+		processedRanking = append(processedRanking, RankingItem{
+			OpenID:       item.OpenID,
+			Contribution: item.Contribution,
+			Rank:         rank,
+		})
+	}
+
+	result := []RankingItem{}
+	userInResult := false
+	var userRank *RankingItem
+
+	for _, item := range processedRanking {
+		if item.Rank <= limit {
+			result = append(result, item)
+			if item.OpenID == userId {
+				userInResult = true
+			}
+		}
+		if item.OpenID == userId {
+			userRank = &item
+		}
+	}
+
+	if !userInResult && userRank != nil {
+		result = append(result, *userRank)
+	}
+
+	return result
 }
 
 func getFilters(key, value string) func(Record) bool {

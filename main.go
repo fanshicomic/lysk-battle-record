@@ -67,6 +67,8 @@ func main() {
 	r.GET("/latest-orbit-records", server.GetLatestOrbitRecords)
 	r.GET("/latest-championships-records", server.GetLatestChampionshipsRecords)
 
+	r.GET("/ranking", server.GetRanking)
+
 	r.Run(":8080")
 }
 
