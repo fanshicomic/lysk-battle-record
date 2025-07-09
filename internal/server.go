@@ -27,6 +27,8 @@ type Server interface {
 	GetLatestChampionshipsRecords(c *gin.Context)
 
 	GetAllMyOrbitRecords(c *gin.Context)
+
+	GetRanking(c *gin.Context)
 }
 
 func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient GoogleSheetClient,
@@ -347,4 +349,14 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 		Offset: offset,
 	})
 	c.JSON(http.StatusOK, record)
+}
+
+func (s *LyskServer) GetRanking(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		userId = ""
+	}
+	ranking := s.orbitRecordStore.GetRanking(userId.(string))
+
+	c.JSON(http.StatusOK, ranking)
 }
