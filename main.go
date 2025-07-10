@@ -12,15 +12,15 @@ import (
 
 const (
 	spreadsheetID     = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
-	orbitSheetName    = "轨道"
+	orbitSheetName    = "轨道测试"
 	championSheetName = "锦标赛"
 )
 
 func main() {
-	orbitGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, orbitSheetName)
+	orbitGoogleSheetClient := internal.NewRecordSheetClient(spreadsheetID, orbitSheetName)
 	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
-	championshipsGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, championSheetName)
+	championshipsGoogleSheetClient := internal.NewRecordSheetClient(spreadsheetID, championSheetName)
 	championshipsRecordStore := internal.NewInMemoryRecordStore(championshipsGoogleSheetClient)
 
 	server := internal.InitLyskServer(
