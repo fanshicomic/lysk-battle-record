@@ -16,17 +16,25 @@ type Server interface {
 	Login(c *gin.Context)
 	AuthMiddleware() gin.HandlerFunc
 
+	// Orbit Records
 	ProcessOrbitRecord(c *gin.Context)
+	UpdateOrbitRecord(c *gin.Context)
 	GetOrbitRecords(c *gin.Context)
-	GetMyOrbitRecords(c *gin.Context)
+	DeleteOrbitRecord(c *gin.Context)
 
+	// Championships Records
 	ProcessChampionshipsRecord(c *gin.Context)
-	GetLatestOrbitRecords(c *gin.Context)
-
+	UpdateChampionshipsRecord(c *gin.Context)
 	GetChampionshipsRecords(c *gin.Context)
+	DeleteChampionshipsRecord(c *gin.Context)
+
+	// Latest Records
+	GetLatestOrbitRecords(c *gin.Context)
 	GetLatestChampionshipsRecords(c *gin.Context)
 
+	// My Records
 	GetAllMyOrbitRecords(c *gin.Context)
+	GetMyOrbitRecords(c *gin.Context)
 
 	GetRanking(c *gin.Context)
 }
@@ -168,13 +176,14 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 		return
 	}
 
-	if err := s.orbitSheetClient.ProcessRecord(record); err != nil {
+	ingestedRecord, err := s.orbitSheetClient.ProcessRecord(record)
+	if err != nil {
 		logrus.Errorf("[Orbit] Failed to write record to Google Sheet: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入失败", "detail": err.Error()})
 		return
 	}
 
-	s.orbitRecordStore.Insert(record)
+	s.orbitRecordStore.Insert(*ingestedRecord)
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
@@ -294,13 +303,14 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 		return
 	}
 
-	if err := s.championshipsSheetClient.ProcessRecord(record); err != nil {
+	ingestedRecord, err := s.championshipsSheetClient.ProcessRecord(record)
+	if err != nil {
 		logrus.Errorf("[Championships] Failed to write record to Google Sheet: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入失败", "detail": err.Error()})
 		return
 	}
 
-	s.championshipsRecordStore.Insert(record)
+	s.championshipsRecordStore.Insert(*ingestedRecord)
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
@@ -351,6 +361,207 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 	c.JSON(http.StatusOK, record)
 }
 
+func (s *LyskServer) UpdateOrbitRecord(c *gin.Context) {
+	var input map[string]interface{}
+	if err := c.BindJSON(&input); err != nil {
+		logrus.Errorf("[Orbit] Failed to bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误", "detail": err.Error()})
+		return
+	}
+
+	recordId := c.Param("id")
+	existingRecord, ok := s.orbitRecordStore.Get(recordId)
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
+		return
+	}
+
+	if existingRecord.Deleted {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录已被删除"})
+		return
+	}
+
+	userId, exists := c.Get("userID")
+	if !exists || userId.(string) != existingRecord.UserID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "无权修改此记录"})
+		return
+	}
+
+	record := Record{}
+	record.Id = recordId
+	record.RowNumber = existingRecord.RowNumber
+	record.UserID = existingRecord.UserID
+	record.Time = existingRecord.Time
+
+	record.LevelType = fmt.Sprintf("%v", input["关卡"])
+	record.LevelNumber = fmt.Sprintf("%v", input["关数"])
+	record.LevelMode = fmt.Sprintf("%v", input["模式"])
+	record.Attack = fmt.Sprintf("%v", input["攻击"])
+	record.HP = fmt.Sprintf("%v", input["生命"])
+	record.Defense = fmt.Sprintf("%v", input["防御"])
+	record.Matching = fmt.Sprintf("%v", input["对谱"])
+	record.MatchingBuff = fmt.Sprintf("%v", input["对谱加成"])
+	record.CritRate = fmt.Sprintf("%v", input["暴击"])
+	record.CritDmg = fmt.Sprintf("%v", input["暴伤"])
+	record.EnergyRegen = fmt.Sprintf("%v", input["加速回能"])
+	record.WeakenBoost = fmt.Sprintf("%v", input["虚弱增伤"])
+	record.OathBoost = fmt.Sprintf("%v", input["誓约增伤"])
+	record.OathRegen = fmt.Sprintf("%v", input["誓约回能"])
+	record.Partner = fmt.Sprintf("%v", input["搭档身份"])
+	record.SetCard = fmt.Sprintf("%v", input["日卡"])
+	record.Stage = fmt.Sprintf("%v", input["阶数"])
+	record.Weapon = fmt.Sprintf("%v", input["武器"])
+
+	if _, err := record.ValidateOrbit(); err != nil {
+		logrus.Errorf("[Orbit] Record validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.orbitSheetClient.UpdateRecord(record); err != nil {
+		logrus.Errorf("[Orbit] Failed to update record in Google Sheet: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败", "detail": err.Error()})
+		return
+	}
+
+	if err := s.orbitRecordStore.Update(record); err != nil {
+		logrus.Errorf("[Orbit] Failed to update record in memory: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+func (s *LyskServer) DeleteOrbitRecord(c *gin.Context) {
+	recordId := c.Param("id")
+	existingRecord, ok := s.orbitRecordStore.Get(recordId)
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
+		return
+	}
+
+	if existingRecord.Deleted {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录已被删除"})
+		return
+	}
+
+	userId, exists := c.Get("userID")
+	if !exists || userId.(string) != existingRecord.UserID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "无权删除此记录"})
+		return
+	}
+
+	if err := s.orbitSheetClient.DeleteRecord(existingRecord); err != nil {
+		logrus.Errorf("[Orbit] Failed to delete record from Google Sheet: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败", "detail": err.Error()})
+		return
+	}
+
+	if err := s.orbitRecordStore.Delete(existingRecord); err != nil {
+		logrus.Errorf("[Orbit] Failed to delete record from memory: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+func (s *LyskServer) UpdateChampionshipsRecord(c *gin.Context) {
+	var input map[string]interface{}
+	if err := c.BindJSON(&input); err != nil {
+		logrus.Errorf("[Championships] Failed to bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误", "detail": err.Error()})
+		return
+	}
+
+	recordId := c.Param("id")
+	existingRecord, ok := s.championshipsRecordStore.Get(recordId)
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
+		return
+	}
+
+	userId, exists := c.Get("userID")
+	if !exists || userId.(string) != existingRecord.UserID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "无权修改此记录"})
+		return
+	}
+
+	record := Record{}
+	record.Id = recordId
+	record.RowNumber = existingRecord.RowNumber
+	record.UserID = existingRecord.UserID
+	record.Time = existingRecord.Time
+
+	record.LevelType = fmt.Sprintf("%v", input["关卡"])
+	record.Attack = fmt.Sprintf("%v", input["攻击"])
+	record.HP = fmt.Sprintf("%v", input["生命"])
+	record.Defense = fmt.Sprintf("%v", input["防御"])
+	record.Matching = fmt.Sprintf("%v", input["对谱"])
+	record.MatchingBuff = fmt.Sprintf("%v", input["对谱加成"])
+	record.CritRate = fmt.Sprintf("%v", input["暴击"])
+	record.CritDmg = fmt.Sprintf("%v", input["暴伤"])
+	record.EnergyRegen = fmt.Sprintf("%v", input["加速回能"])
+	record.WeakenBoost = fmt.Sprintf("%v", input["虚弱增伤"])
+	record.OathBoost = fmt.Sprintf("%v", input["誓约增伤"])
+	record.OathRegen = fmt.Sprintf("%v", input["誓约回能"])
+	record.Partner = fmt.Sprintf("%v", input["搭档身份"])
+	record.SetCard = fmt.Sprintf("%v", input["日卡"])
+	record.Stage = fmt.Sprintf("%v", input["阶数"])
+	record.Weapon = fmt.Sprintf("%v", input["武器"])
+	record.Buff = fmt.Sprintf("%v", input["加成"])
+
+	if _, err := record.ValidateChampionships(); err != nil {
+		logrus.Errorf("[Championships] Record validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.championshipsSheetClient.UpdateRecord(record); err != nil {
+		logrus.Errorf("[Championships] Failed to update record in Google Sheet: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败", "detail": err.Error()})
+		return
+	}
+
+	if err := s.championshipsRecordStore.Update(record); err != nil {
+		logrus.Errorf("[Championships] Failed to update record in memory: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+func (s *LyskServer) DeleteChampionshipsRecord(c *gin.Context) {
+	recordId := c.Param("id")
+	existingRecord, ok := s.championshipsRecordStore.Get(recordId)
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
+		return
+	}
+
+	userId, exists := c.Get("userID")
+	if !exists || userId.(string) != existingRecord.UserID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "无权删除此记录"})
+		return
+	}
+
+	if err := s.championshipsSheetClient.DeleteRecord(existingRecord); err != nil {
+		logrus.Errorf("[Championships] Failed to delete record from Google Sheet: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败", "detail": err.Error()})
+		return
+	}
+
+	if err := s.championshipsRecordStore.Delete(existingRecord); err != nil {
+		logrus.Errorf("[Championships] Failed to delete record from memory: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败", "detail": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
 func (s *LyskServer) GetRanking(c *gin.Context) {
 	userId, exists := c.Get("userID")
 	if !exists {
@@ -359,4 +570,5 @@ func (s *LyskServer) GetRanking(c *gin.Context) {
 	ranking := s.orbitRecordStore.GetRanking(userId.(string))
 
 	c.JSON(http.StatusOK, ranking)
+
 }

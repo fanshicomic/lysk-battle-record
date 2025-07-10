@@ -17,7 +17,6 @@ const (
 )
 
 func main() {
-
 	orbitGoogleSheetClient := internal.NewGoogleSheetClient(spreadsheetID, orbitSheetName)
 	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
@@ -42,7 +41,7 @@ func main() {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     allowOrigins,
-		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
@@ -56,7 +55,11 @@ func main() {
 	authRequired.Use(server.AuthMiddleware())
 	{
 		authRequired.POST("/orbit-record", server.ProcessOrbitRecord)
+		authRequired.PUT("/orbit-record/:id", server.UpdateOrbitRecord)
+		authRequired.DELETE("/orbit-record/:id", server.DeleteOrbitRecord)
 		authRequired.POST("/championships-record", server.ProcessChampionshipsRecord)
+		authRequired.PUT("/championships-record/:id", server.UpdateChampionshipsRecord)
+		authRequired.DELETE("/championships-record/:id", server.DeleteChampionshipsRecord)
 		authRequired.GET("/my-orbit-record", server.GetMyOrbitRecords)
 		authRequired.GET("/all-my-orbit-records", server.GetAllMyOrbitRecords)
 	}
