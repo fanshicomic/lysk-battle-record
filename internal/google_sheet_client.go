@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
@@ -12,7 +15,9 @@ import (
 
 type GoogleSheetClient interface {
 	FetchAllSheetData() ([]Record, error)
-	ProcessRecord(record Record) error
+	ProcessRecord(record Record) (*Record, error)
+	UpdateRecord(record Record) error
+	DeleteRecord(record Record) error
 	GetType() string
 }
 
@@ -67,7 +72,7 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 }
 
 func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:W").Do()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -79,36 +84,42 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		}
 	}
 
-	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:W").Do()
+	resp, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A2:Z").Do()
 	if err != nil {
 		return nil, err
 	}
 
 	var records []Record
-	for _, row := range resp.Values {
+	for i, row := range resp.Values {
 		r := Record{}
 
-		r.LevelType = fmt.Sprint(c.getValue(row, headerIndexMap, "关卡"))
-		r.LevelNumber = fmt.Sprint(c.getValue(row, headerIndexMap, "关数"))
-		r.LevelMode = fmt.Sprint(c.getValue(row, headerIndexMap, "模式"))
-		r.Attack = fmt.Sprint(c.getValue(row, headerIndexMap, "攻击"))
-		r.HP = fmt.Sprint(c.getValue(row, headerIndexMap, "生命"))
-		r.Defense = fmt.Sprint(c.getValue(row, headerIndexMap, "防御"))
-		r.Matching = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱"))
-		r.MatchingBuff = fmt.Sprint(c.getValue(row, headerIndexMap, "对谱加成"))
-		r.CritRate = fmt.Sprint(c.getValue(row, headerIndexMap, "暴击"))
-		r.CritDmg = fmt.Sprint(c.getValue(row, headerIndexMap, "暴伤"))
-		r.EnergyRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "加速回能"))
-		r.WeakenBoost = fmt.Sprint(c.getValue(row, headerIndexMap, "虚弱增伤"))
-		r.OathBoost = fmt.Sprint(c.getValue(row, headerIndexMap, "誓约增伤"))
-		r.OathRegen = fmt.Sprint(c.getValue(row, headerIndexMap, "誓约回能"))
-		r.Partner = fmt.Sprint(c.getValue(row, headerIndexMap, "搭档身份"))
-		r.SetCard = fmt.Sprint(c.getValue(row, headerIndexMap, "日卡"))
-		r.Stage = fmt.Sprint(c.getValue(row, headerIndexMap, "阶数"))
-		r.Weapon = fmt.Sprint(c.getValue(row, headerIndexMap, "武器"))
-		r.Buff = fmt.Sprint(c.getValue(row, headerIndexMap, "加成"))
-		r.Time = fmt.Sprint(c.getValue(row, headerIndexMap, "时间"))
-		r.UserID = fmt.Sprint(c.getValue(row, headerIndexMap, "用户ID"))
+		r.RowNumber = i + 2
+		r.LevelType = c.getValue(row, headerIndexMap, "关卡")
+		r.LevelNumber = c.getValue(row, headerIndexMap, "关数")
+		r.LevelMode = c.getValue(row, headerIndexMap, "模式")
+		r.Attack = c.getValue(row, headerIndexMap, "攻击")
+		r.HP = c.getValue(row, headerIndexMap, "生命")
+		r.Defense = c.getValue(row, headerIndexMap, "防御")
+		r.Matching = c.getValue(row, headerIndexMap, "对谱")
+		r.MatchingBuff = c.getValue(row, headerIndexMap, "对谱加成")
+		r.CritRate = c.getValue(row, headerIndexMap, "暴击")
+		r.CritDmg = c.getValue(row, headerIndexMap, "暴伤")
+		r.EnergyRegen = c.getValue(row, headerIndexMap, "加速回能")
+		r.WeakenBoost = c.getValue(row, headerIndexMap, "虚弱增伤")
+		r.OathBoost = c.getValue(row, headerIndexMap, "誓约增伤")
+		r.OathRegen = c.getValue(row, headerIndexMap, "誓约回能")
+		r.Partner = c.getValue(row, headerIndexMap, "搭档身份")
+		r.SetCard = c.getValue(row, headerIndexMap, "日卡")
+		r.Stage = c.getValue(row, headerIndexMap, "阶数")
+		r.Weapon = c.getValue(row, headerIndexMap, "武器")
+		r.Buff = c.getValue(row, headerIndexMap, "加成")
+		r.Time = c.getValue(row, headerIndexMap, "时间")
+		r.UserID = c.getValue(row, headerIndexMap, "用户ID")
+		r.Id = c.getValue(row, headerIndexMap, "id")
+
+		deletedStr := c.getValue(row, headerIndexMap, "deleted")
+		deleted, _ := strconv.ParseBool(deletedStr)
+		r.Deleted = deleted
 
 		records = append(records, r)
 	}
@@ -116,15 +127,113 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 	return records, nil
 }
 
-func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[string]int, key string) interface{} {
+func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[string]int, key string) string {
 	if index, ok := headerIndexMap[key]; ok && index < len(row) {
-		return row[index]
+		return fmt.Sprint(row[index])
 	}
-	return nil
+	return ""
 }
 
-func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
-	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:W").Do()
+func (c *GoogleSheetClientImpl) ProcessRecord(record Record) (*Record, error) {
+	record.Id = uuid.New().String()
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	headerIndexMap := make(map[string]int)
+	for i, h := range header.Values[0] {
+		if hStr, ok := h.(string); ok {
+			headerIndexMap[hStr] = i
+		} else {
+			logrus.Infof("sheet %s header %v is not a string, skipping", c.sheetName, h)
+		}
+	}
+
+	row := make([]interface{}, len(headerIndexMap))
+	for key, index := range headerIndexMap {
+		switch key {
+		case "关卡":
+			row[index] = record.LevelType
+		case "关数":
+			row[index] = record.LevelNumber
+		case "模式":
+			row[index] = record.LevelMode
+		case "攻击":
+			row[index] = record.Attack
+		case "防御":
+			row[index] = record.Defense
+		case "生命":
+			row[index] = record.HP
+		case "对谱":
+			row[index] = record.Matching
+		case "对谱加成":
+			row[index] = record.MatchingBuff
+		case "暴击":
+			row[index] = record.CritRate
+		case "暴伤":
+			row[index] = record.CritDmg
+		case "加速回能":
+			row[index] = record.EnergyRegen
+		case "虚弱增伤":
+			row[index] = record.WeakenBoost
+		case "誓约增伤":
+			row[index] = record.OathBoost
+		case "誓约回能":
+			row[index] = record.OathRegen
+		case "搭档身份":
+			row[index] = record.Partner
+		case "日卡":
+			row[index] = record.SetCard
+		case "阶数":
+			row[index] = record.Stage
+		case "武器":
+			row[index] = record.Weapon
+		case "加成":
+			row[index] = record.Buff
+		case "时间":
+			row[index] = record.Time
+		case "用户ID":
+			row[index] = record.UserID
+		case "id":
+			row[index] = record.Id
+		default:
+		}
+	}
+
+	resp, err := c.srv.Spreadsheets.Values.Append(c.sheetId, c.sheetName+"!A1", &sheets.ValueRange{
+		Values: [][]interface{}{row},
+	}).ValueInputOption("RAW").Do()
+	if err != nil {
+		// : assign record.RowNumber after appending
+		logrus.Errorf("sheet %s failed to append record to Google Sheets: %v", c.sheetName, err)
+		return nil, err
+	}
+
+	rowNum, err := extractRowNumber(resp.Updates.UpdatedRange)
+	if err != nil {
+		return nil, err
+	}
+	record.RowNumber = rowNum
+
+	return &record, nil
+}
+
+func extractRowNumber(updatedRange string) (int, error) {
+	re := regexp.MustCompile(`A(\d+)`)
+	matches := re.FindStringSubmatch(updatedRange)
+	if len(matches) < 2 {
+		return 0, fmt.Errorf("could not extract row number from range: %s", updatedRange)
+	}
+	return strconv.Atoi(matches[1])
+}
+
+func (c *GoogleSheetClientImpl) GetType() string {
+	return c.sheetName
+}
+
+func (c *GoogleSheetClientImpl) UpdateRecord(record Record) error {
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return err
 	}
@@ -183,21 +292,62 @@ func (c *GoogleSheetClientImpl) ProcessRecord(record Record) error {
 			row[index] = record.Time
 		case "用户ID":
 			row[index] = record.UserID
+		case "id":
+			row[index] = record.Id
+		case "deleted":
+			row[index] = record.Deleted
 		default:
 		}
 	}
 
-	_, err = c.srv.Spreadsheets.Values.Append(c.sheetId, c.sheetName+"!A1", &sheets.ValueRange{
+	updateRange := fmt.Sprintf("%s!A%d", c.sheetName, record.RowNumber)
+	_, err = c.srv.Spreadsheets.Values.Update(c.sheetId, updateRange, &sheets.ValueRange{
 		Values: [][]interface{}{row},
 	}).ValueInputOption("RAW").Do()
 	if err != nil {
-		logrus.Errorf("sheet %s failed to append record to Google Sheets: %v", c.sheetName, err)
+		logrus.Errorf("sheet %s failed to update record to Google Sheets: %v", c.sheetName, err)
 		return err
 	}
 
 	return nil
 }
 
-func (c *GoogleSheetClientImpl) GetType() string {
-	return c.sheetName
+func (c *GoogleSheetClientImpl) DeleteRecord(record Record) error {
+	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
+	if err != nil {
+		return err
+	}
+
+	headerIndexMap := make(map[string]int)
+	for i, h := range header.Values[0] {
+		if hStr, ok := h.(string); ok {
+			headerIndexMap[hStr] = i
+		}
+	}
+
+	deleteColumnIndex, ok := headerIndexMap["deleted"]
+	if !ok {
+		return fmt.Errorf("deleted column not found in sheet %s", c.sheetName)
+	}
+
+	updateRange := fmt.Sprintf("%s!%s%d", c.sheetName, toCharStr(deleteColumnIndex+1), record.RowNumber)
+	_, err = c.srv.Spreadsheets.Values.Update(c.sheetId, updateRange, &sheets.ValueRange{
+		Values: [][]interface{}{{true}},
+	}).ValueInputOption("RAW").Do()
+	if err != nil {
+		logrus.Errorf("sheet %s failed to delete record from Google Sheets: %v", c.sheetName, err)
+		return err
+	}
+
+	return nil
+}
+
+func toCharStr(i int) string {
+	s := ""
+	for i > 0 {
+		i--
+		s = string('A'+i%26) + s
+		i /= 26
+	}
+	return s
 }

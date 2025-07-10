@@ -11,8 +11,11 @@ import (
 
 type RecordStore interface {
 	GetAll() []Record
+	Get(id string) (Record, bool)
 	Query(opt QueryOptions) QueryResult
 	Insert(record Record)
+	Update(record Record) error
+	Delete(record Record) error
 	PrepareInsert(record Record) error
 	IsDuplicate(record Record) bool
 	GetRanking(userId string) []RankingItem
@@ -120,6 +123,7 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 	for k, v := range opt.Filters {
 		filterFunc := getFilters(k, v)
 		res = res.filter(filterFunc)
+		res = res.filter(filterOutDeleted())
 	}
 	count := len(res)
 
@@ -157,7 +161,51 @@ func (s *InMemoryRecordStore) IsDuplicate(record Record) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.recordsHash[record.getHash()] || s.ingestPoolHash[record.getHash()]
+	hash := record.getHash()
+	return s.recordsHash[hash] || s.ingestPoolHash[hash]
+}
+
+func (s *InMemoryRecordStore) Get(id string) (Record, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, r := range s.records {
+		if r.Id == id {
+			return r, true
+		}
+	}
+	return Record{}, false
+}
+
+func (s *InMemoryRecordStore) Update(record Record) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, r := range s.records {
+		if r.Id == record.Id {
+			if r.Deleted {
+				return errors.New("cannot update a deleted record")
+			}
+			s.records[i] = record
+			break
+		}
+	}
+	return nil
+}
+
+func (s *InMemoryRecordStore) Delete(record Record) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	hash := record.getHash()
+	s.recordsHash[hash] = false
+	for i, r := range s.records {
+		if r.Id == record.Id {
+			s.records[i].Deleted = true
+			break
+		}
+	}
+
+	return nil
 }
 
 func (s *InMemoryRecordStore) GetRanking(userId string) []RankingItem {
@@ -224,5 +272,11 @@ func getFilters(key, value string) func(Record) bool {
 		default:
 			return true
 		}
+	}
+}
+
+func filterOutDeleted() func(Record) bool {
+	return func(r Record) bool {
+		return r.Deleted != true
 	}
 }
