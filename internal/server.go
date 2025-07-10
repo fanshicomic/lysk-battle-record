@@ -39,8 +39,8 @@ type Server interface {
 	GetRanking(c *gin.Context)
 }
 
-func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient GoogleSheetClient,
-	championshipsRecordStore RecordStore, championshipsSheetClient GoogleSheetClient, auth *Authenticator) Server {
+func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient RecordSheetClient,
+	championshipsRecordStore RecordStore, championshipsSheetClient RecordSheetClient, auth *Authenticator) Server {
 
 	return &LyskServer{
 		orbitRecordStore:         orbitRecordStore,
@@ -53,9 +53,9 @@ func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient GoogleSheetCl
 
 type LyskServer struct {
 	orbitRecordStore         RecordStore
-	orbitSheetClient         GoogleSheetClient
+	orbitSheetClient         RecordSheetClient
 	championshipsRecordStore RecordStore
-	championshipsSheetClient GoogleSheetClient
+	championshipsSheetClient RecordSheetClient
 	auth                     *Authenticator
 
 	Lottery *Lottery

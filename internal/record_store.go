@@ -26,7 +26,7 @@ type InMemoryRecordStore struct {
 	records        []Record
 	recordsHash    map[string]bool
 	ingestPoolHash map[string]bool
-	sheetClient    GoogleSheetClient
+	sheetClient    RecordSheetClient
 	ranking        []RankingItem
 }
 
@@ -43,7 +43,7 @@ type QueryResult struct {
 	Records []Record `json:"records"`
 }
 
-func NewInMemoryRecordStore(sheetClient GoogleSheetClient) *InMemoryRecordStore {
+func NewInMemoryRecordStore(sheetClient RecordSheetClient) *InMemoryRecordStore {
 	store := &InMemoryRecordStore{
 		sheetClient:    sheetClient,
 		ingestPoolHash: make(map[string]bool),

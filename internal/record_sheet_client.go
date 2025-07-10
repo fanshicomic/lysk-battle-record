@@ -13,7 +13,7 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-type GoogleSheetClient interface {
+type RecordSheetClient interface {
 	FetchAllSheetData() ([]Record, error)
 	ProcessRecord(record Record) (*Record, error)
 	UpdateRecord(record Record) error
@@ -21,13 +21,13 @@ type GoogleSheetClient interface {
 	GetType() string
 }
 
-type GoogleSheetClientImpl struct {
+type RecordSheetClientImpl struct {
 	sheetId   string
 	sheetName string
 	srv       *sheets.Service
 }
 
-func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
+func NewRecordSheetClient(sheetId, sheetName string) *RecordSheetClientImpl {
 	ctx := context.Background()
 	var srv *sheets.Service
 
@@ -45,7 +45,7 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 		}
 
 		logrus.Infof("%s use credentials.json to init Sheets client", sheetName)
-		return &GoogleSheetClientImpl{
+		return &RecordSheetClientImpl{
 			srv:       srv,
 			sheetId:   sheetId,
 			sheetName: sheetName,
@@ -64,14 +64,14 @@ func NewGoogleSheetClient(sheetId, sheetName string) *GoogleSheetClientImpl {
 	}
 
 	logrus.Infof("%s using default client (Cloud Run) to init Sheets client", sheetName)
-	return &GoogleSheetClientImpl{
+	return &RecordSheetClientImpl{
 		srv:       srv,
 		sheetId:   sheetId,
 		sheetName: sheetName,
 	}
 }
 
-func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
+func (c *RecordSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return nil, err
@@ -127,14 +127,14 @@ func (c *GoogleSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 	return records, nil
 }
 
-func (c *GoogleSheetClientImpl) getValue(row []interface{}, headerIndexMap map[string]int, key string) string {
+func (c *RecordSheetClientImpl) getValue(row []interface{}, headerIndexMap map[string]int, key string) string {
 	if index, ok := headerIndexMap[key]; ok && index < len(row) {
 		return fmt.Sprint(row[index])
 	}
 	return ""
 }
 
-func (c *GoogleSheetClientImpl) ProcessRecord(record Record) (*Record, error) {
+func (c *RecordSheetClientImpl) ProcessRecord(record Record) (*Record, error) {
 	record.Id = uuid.New().String()
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
@@ -228,11 +228,11 @@ func extractRowNumber(updatedRange string) (int, error) {
 	return strconv.Atoi(matches[1])
 }
 
-func (c *GoogleSheetClientImpl) GetType() string {
+func (c *RecordSheetClientImpl) GetType() string {
 	return c.sheetName
 }
 
-func (c *GoogleSheetClientImpl) UpdateRecord(record Record) error {
+func (c *RecordSheetClientImpl) UpdateRecord(record Record) error {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return err
@@ -312,7 +312,7 @@ func (c *GoogleSheetClientImpl) UpdateRecord(record Record) error {
 	return nil
 }
 
-func (c *GoogleSheetClientImpl) DeleteRecord(record Record) error {
+func (c *RecordSheetClientImpl) DeleteRecord(record Record) error {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return err
