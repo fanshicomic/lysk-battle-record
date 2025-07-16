@@ -1,4 +1,4 @@
-package internal
+package datastores
 
 import (
 	"errors"
@@ -7,27 +7,29 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"lysk-battle-record/internal/models"
+	"lysk-battle-record/internal/sheet_clients"
 )
 
 type RecordStore interface {
-	GetAll() []Record
-	Get(id string) (Record, bool)
+	GetAll() []models.Record
+	Get(id string) (models.Record, bool)
 	Query(opt QueryOptions) QueryResult
-	Insert(record Record)
-	Update(record Record) error
-	Delete(record Record) error
-	PrepareInsert(record Record) error
-	IsDuplicate(record Record) bool
-	GetRanking(userId string) []RankingItem
+	Insert(record models.Record)
+	Update(record models.Record) error
+	Delete(record models.Record) error
+	PrepareInsert(record models.Record) error
+	IsDuplicate(record models.Record) bool
+	GetRanking(userId string) []models.RankingItem
 }
 
 type InMemoryRecordStore struct {
 	mu             sync.RWMutex
-	records        []Record
+	records        []models.Record
 	recordsHash    map[string]bool
 	ingestPoolHash map[string]bool
-	sheetClient    RecordSheetClient
-	ranking        []RankingItem
+	sheetClient    sheet_clients.RecordSheetClient
+	ranking        []models.RankingItem
 }
 
 type QueryOptions struct {
@@ -39,11 +41,11 @@ type QueryOptions struct {
 }
 
 type QueryResult struct {
-	Total   int      `json:"total"`
-	Records []Record `json:"records"`
+	Total   int             `json:"total"`
+	Records []models.Record `json:"records"`
 }
 
-func NewInMemoryRecordStore(sheetClient RecordSheetClient) *InMemoryRecordStore {
+func NewInMemoryRecordStore(sheetClient sheet_clients.RecordSheetClient) *InMemoryRecordStore {
 	store := &InMemoryRecordStore{
 		sheetClient:    sheetClient,
 		ingestPoolHash: make(map[string]bool),
@@ -73,10 +75,10 @@ func (s *InMemoryRecordStore) refresh() {
 		}
 	}
 
-	ranking := []RankingItem{}
+	ranking := []models.RankingItem{}
 
 	for userId, count := range contribution {
-		ranking = append(ranking, RankingItem{
+		ranking = append(ranking, models.RankingItem{
 			OpenID:       userId,
 			Contribution: count,
 		})
@@ -98,18 +100,18 @@ func (s *InMemoryRecordStore) refresh() {
 	logrus.Infof("sheet %s refreshed %d records", s.sheetClient.GetType(), len(s.records))
 }
 
-func (s *InMemoryRecordStore) ingestHash(record Record) {
+func (s *InMemoryRecordStore) ingestHash(record models.Record) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	key := record.getHash()
+	key := record.GetHash()
 	s.recordsHash[key] = true
 }
 
-func (s *InMemoryRecordStore) GetAll() []Record {
+func (s *InMemoryRecordStore) GetAll() []models.Record {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return append([]Record(nil), s.records...)
+	return append([]models.Record(nil), s.records...)
 }
 
 func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
@@ -119,16 +121,16 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 		opt.Limit = 10
 	}
 
-	res := append(Records{}, s.records...)
+	res := append(models.Records{}, s.records...)
 	for k, v := range opt.Filters {
 		filterFunc := getFilters(k, v)
-		res = res.filter(filterFunc)
-		res = res.filter(filterOutDeleted())
+		res = res.Filter(filterFunc)
+		res = res.Filter(filterOutDeleted())
 	}
 	count := len(res)
 
-	res = res.sortByTimeDesc()
-	res = res.pagination(opt.Offset, opt.Limit)
+	res = res.SortByTimeDesc()
+	res = res.Pagination(opt.Offset, opt.Limit)
 
 	return QueryResult{
 		Total:   count,
@@ -136,20 +138,20 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 	}
 }
 
-func (s *InMemoryRecordStore) Insert(record Record) {
+func (s *InMemoryRecordStore) Insert(record models.Record) {
 	s.ingestHash(record)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.records = append(s.records, record)
-	delete(s.ingestPoolHash, record.getHash())
+	delete(s.ingestPoolHash, record.GetHash())
 }
 
-func (s *InMemoryRecordStore) PrepareInsert(record Record) error {
+func (s *InMemoryRecordStore) PrepareInsert(record models.Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	key := record.getHash()
+	key := record.GetHash()
 	if s.ingestPoolHash[key] {
 		return errors.New("记录已在上传准备中")
 	}
@@ -157,15 +159,15 @@ func (s *InMemoryRecordStore) PrepareInsert(record Record) error {
 	return nil
 }
 
-func (s *InMemoryRecordStore) IsDuplicate(record Record) bool {
+func (s *InMemoryRecordStore) IsDuplicate(record models.Record) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	hash := record.getHash()
+	hash := record.GetHash()
 	return s.recordsHash[hash] || s.ingestPoolHash[hash]
 }
 
-func (s *InMemoryRecordStore) Get(id string) (Record, bool) {
+func (s *InMemoryRecordStore) Get(id string) (models.Record, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -174,10 +176,10 @@ func (s *InMemoryRecordStore) Get(id string) (Record, bool) {
 			return r, true
 		}
 	}
-	return Record{}, false
+	return models.Record{}, false
 }
 
-func (s *InMemoryRecordStore) Update(record Record) error {
+func (s *InMemoryRecordStore) Update(record models.Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i, r := range s.records {
@@ -192,11 +194,11 @@ func (s *InMemoryRecordStore) Update(record Record) error {
 	return nil
 }
 
-func (s *InMemoryRecordStore) Delete(record Record) error {
+func (s *InMemoryRecordStore) Delete(record models.Record) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	hash := record.getHash()
+	hash := record.GetHash()
 	s.recordsHash[hash] = false
 	for i, r := range s.records {
 		if r.Id == record.Id {
@@ -208,28 +210,28 @@ func (s *InMemoryRecordStore) Delete(record Record) error {
 	return nil
 }
 
-func (s *InMemoryRecordStore) GetRanking(userId string) []RankingItem {
+func (s *InMemoryRecordStore) GetRanking(userId string) []models.RankingItem {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	limit := 10
 
-	processedRanking := []RankingItem{}
+	processedRanking := []models.RankingItem{}
 	rank := 1
 	for i, item := range s.ranking {
 		if i > 0 && item.Contribution < s.ranking[i-1].Contribution {
 			rank = i + 1
 		}
-		processedRanking = append(processedRanking, RankingItem{
+		processedRanking = append(processedRanking, models.RankingItem{
 			OpenID:       item.OpenID,
 			Contribution: item.Contribution,
 			Rank:         rank,
 		})
 	}
 
-	result := []RankingItem{}
+	result := []models.RankingItem{}
 	userInResult := false
-	var userRank *RankingItem
+	var userRank *models.RankingItem
 
 	for _, item := range processedRanking {
 		if item.Rank <= limit {
@@ -250,8 +252,8 @@ func (s *InMemoryRecordStore) GetRanking(userId string) []RankingItem {
 	return result
 }
 
-func getFilters(key, value string) func(Record) bool {
-	return func(r Record) bool {
+func getFilters(key, value string) func(models.Record) bool {
+	return func(r models.Record) bool {
 		switch key {
 		case "关卡":
 			return r.LevelType == value
@@ -275,8 +277,8 @@ func getFilters(key, value string) func(Record) bool {
 	}
 }
 
-func filterOutDeleted() func(Record) bool {
-	return func(r Record) bool {
+func filterOutDeleted() func(models.Record) bool {
+	return func(r models.Record) bool {
 		return r.Deleted != true
 	}
 }

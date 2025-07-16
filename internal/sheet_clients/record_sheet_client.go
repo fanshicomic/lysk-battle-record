@@ -1,4 +1,4 @@
-package internal
+package sheet_clients
 
 import (
 	"context"
@@ -11,13 +11,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
+
+	"lysk-battle-record/internal/models"
 )
 
 type RecordSheetClient interface {
-	FetchAllSheetData() ([]Record, error)
-	ProcessRecord(record Record) (*Record, error)
-	UpdateRecord(record Record) error
-	DeleteRecord(record Record) error
+	FetchAllSheetData() ([]models.Record, error)
+	ProcessRecord(record models.Record) (*models.Record, error)
+	UpdateRecord(record models.Record) error
+	DeleteRecord(record models.Record) error
 	GetType() string
 }
 
@@ -71,7 +73,7 @@ func NewRecordSheetClient(sheetId, sheetName string) *RecordSheetClientImpl {
 	}
 }
 
-func (c *RecordSheetClientImpl) FetchAllSheetData() ([]Record, error) {
+func (c *RecordSheetClientImpl) FetchAllSheetData() ([]models.Record, error) {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return nil, err
@@ -89,9 +91,9 @@ func (c *RecordSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		return nil, err
 	}
 
-	var records []Record
+	var records []models.Record
 	for i, row := range resp.Values {
-		r := Record{}
+		r := models.Record{}
 
 		r.RowNumber = i + 2
 		r.LevelType = c.getValue(row, headerIndexMap, "关卡")
@@ -113,6 +115,8 @@ func (c *RecordSheetClientImpl) FetchAllSheetData() ([]Record, error) {
 		r.Stage = c.getValue(row, headerIndexMap, "阶数")
 		r.Weapon = c.getValue(row, headerIndexMap, "武器")
 		r.Buff = c.getValue(row, headerIndexMap, "加成")
+		r.TotalLevel = c.getValue(row, headerIndexMap, "卡总等级")
+		r.Note = c.getValue(row, headerIndexMap, "备注")
 		r.Time = c.getValue(row, headerIndexMap, "时间")
 		r.UserID = c.getValue(row, headerIndexMap, "用户ID")
 		r.Id = c.getValue(row, headerIndexMap, "id")
@@ -134,7 +138,7 @@ func (c *RecordSheetClientImpl) getValue(row []interface{}, headerIndexMap map[s
 	return ""
 }
 
-func (c *RecordSheetClientImpl) ProcessRecord(record Record) (*Record, error) {
+func (c *RecordSheetClientImpl) ProcessRecord(record models.Record) (*models.Record, error) {
 	record.Id = uuid.New().String()
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
@@ -191,6 +195,10 @@ func (c *RecordSheetClientImpl) ProcessRecord(record Record) (*Record, error) {
 			row[index] = record.Weapon
 		case "加成":
 			row[index] = record.Buff
+		case "卡总等级":
+			row[index] = record.TotalLevel
+		case "备注":
+			row[index] = record.Note
 		case "时间":
 			row[index] = record.Time
 		case "用户ID":
@@ -232,7 +240,7 @@ func (c *RecordSheetClientImpl) GetType() string {
 	return c.sheetName
 }
 
-func (c *RecordSheetClientImpl) UpdateRecord(record Record) error {
+func (c *RecordSheetClientImpl) UpdateRecord(record models.Record) error {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return err
@@ -290,6 +298,10 @@ func (c *RecordSheetClientImpl) UpdateRecord(record Record) error {
 			row[index] = record.Buff
 		case "时间":
 			row[index] = record.Time
+		case "卡总等级":
+			row[index] = record.TotalLevel
+		case "备注":
+			row[index] = record.Note
 		case "用户ID":
 			row[index] = record.UserID
 		case "id":
@@ -312,7 +324,7 @@ func (c *RecordSheetClientImpl) UpdateRecord(record Record) error {
 	return nil
 }
 
-func (c *RecordSheetClientImpl) DeleteRecord(record Record) error {
+func (c *RecordSheetClientImpl) DeleteRecord(record models.Record) error {
 	header, err := c.srv.Spreadsheets.Values.Get(c.sheetId, c.sheetName+"!A1:Z").Do()
 	if err != nil {
 		return err

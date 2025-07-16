@@ -9,6 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+
+	"lysk-battle-record/internal/datastores"
+	"lysk-battle-record/internal/models"
+	"lysk-battle-record/internal/sheet_clients"
 )
 
 type Server interface {
@@ -36,26 +40,36 @@ type Server interface {
 	GetAllMyOrbitRecords(c *gin.Context)
 	GetMyOrbitRecords(c *gin.Context)
 
+	// Users
+	CreateUser(c *gin.Context)
+	GetUser(c *gin.Context)
+	UpdateUser(c *gin.Context)
+
 	GetRanking(c *gin.Context)
 }
 
-func InitLyskServer(orbitRecordStore RecordStore, orbitSheetClient RecordSheetClient,
-	championshipsRecordStore RecordStore, championshipsSheetClient RecordSheetClient, auth *Authenticator) Server {
+func InitLyskServer(orbitRecordStore datastores.RecordStore, orbitSheetClient sheet_clients.RecordSheetClient,
+	championshipsRecordStore datastores.RecordStore, championshipsSheetClient sheet_clients.RecordSheetClient,
+	userStore datastores.UserStore, userSheetClient sheet_clients.UserSheetClient, auth *Authenticator) Server {
 
 	return &LyskServer{
 		orbitRecordStore:         orbitRecordStore,
 		orbitSheetClient:         orbitSheetClient,
 		championshipsRecordStore: championshipsRecordStore,
 		championshipsSheetClient: championshipsSheetClient,
+		userStore:                userStore,
+		userSheetClient:          userSheetClient,
 		auth:                     auth,
 	}
 }
 
 type LyskServer struct {
-	orbitRecordStore         RecordStore
-	orbitSheetClient         RecordSheetClient
-	championshipsRecordStore RecordStore
-	championshipsSheetClient RecordSheetClient
+	orbitRecordStore         datastores.RecordStore
+	orbitSheetClient         sheet_clients.RecordSheetClient
+	championshipsRecordStore datastores.RecordStore
+	championshipsSheetClient sheet_clients.RecordSheetClient
+	userStore                datastores.UserStore
+	userSheetClient          sheet_clients.UserSheetClient
 	auth                     *Authenticator
 
 	Lottery *Lottery
@@ -118,7 +132,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 		return
 	}
 
-	record := Record{}
+	record := models.Record{}
 	if userID, exists := c.Get("userID"); exists {
 		record.UserID = userID.(string)
 	}
@@ -141,6 +155,8 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.SetCard = fmt.Sprintf("%v", input["日卡"])
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
+	record.TotalLevel = fmt.Sprintf("%v", input["卡总等级"])
+	record.Note = fmt.Sprintf("%v", input["备注"])
 
 	if _, err := record.ValidateOrbit(); err != nil {
 		logrus.Errorf("[Orbit] Record validation failed: %v", err)
@@ -199,7 +215,7 @@ func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
 		levelMode = "稳定"
 	}
 
-	record := s.orbitRecordStore.Query(QueryOptions{
+	record := s.orbitRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
 			"关卡": levelType,
 			"关数": levelNum,
@@ -226,7 +242,7 @@ func (s *LyskServer) GetMyOrbitRecords(c *gin.Context) {
 		levelMode = "稳定"
 	}
 
-	record := s.orbitRecordStore.Query(QueryOptions{
+	record := s.orbitRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
 			"关卡":   levelType,
 			"关数":   levelNum,
@@ -246,7 +262,7 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 		return
 	}
 
-	record := Record{}
+	record := models.Record{}
 	if userID, exists := c.Get("userID"); exists {
 		record.UserID = userID.(string)
 	}
@@ -268,6 +284,8 @@ func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
 	record.Buff = fmt.Sprintf("%v", input["加成"])
+	record.TotalLevel = fmt.Sprintf("%v", input["卡总等级"])
+	record.Note = fmt.Sprintf("%v", input["备注"])
 
 	if _, err := record.ValidateChampionships(); err != nil {
 		logrus.Errorf("[Championships] Record validation failed: %v", err)
@@ -320,7 +338,7 @@ func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 	offsetStr := c.DefaultQuery("offset", "0")
 	offset, _ := strconv.Atoi(offsetStr)
 
-	record := s.championshipsRecordStore.Query(QueryOptions{
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
 			"关卡": level,
 		},
@@ -330,14 +348,14 @@ func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 }
 
 func (s *LyskServer) GetLatestOrbitRecords(c *gin.Context) {
-	record := s.orbitRecordStore.Query(QueryOptions{
+	record := s.orbitRecordStore.Query(datastores.QueryOptions{
 		Limit: 5,
 	})
 	c.JSON(http.StatusOK, record)
 }
 
 func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
-	record := s.championshipsRecordStore.Query(QueryOptions{
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Limit: 5,
 	})
 	c.JSON(http.StatusOK, record)
@@ -352,7 +370,7 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 		return
 	}
 
-	record := s.orbitRecordStore.Query(QueryOptions{
+	record := s.orbitRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
 			"用户ID": userId.(string),
 		},
@@ -387,7 +405,7 @@ func (s *LyskServer) UpdateOrbitRecord(c *gin.Context) {
 		return
 	}
 
-	record := Record{}
+	record := models.Record{}
 	record.Id = recordId
 	record.RowNumber = existingRecord.RowNumber
 	record.UserID = existingRecord.UserID
@@ -411,6 +429,8 @@ func (s *LyskServer) UpdateOrbitRecord(c *gin.Context) {
 	record.SetCard = fmt.Sprintf("%v", input["日卡"])
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
+	record.TotalLevel = fmt.Sprintf("%v", input["卡总等级"])
+	record.Note = fmt.Sprintf("%v", input["备注"])
 
 	if _, err := record.ValidateOrbit(); err != nil {
 		logrus.Errorf("[Orbit] Record validation failed: %v", err)
@@ -488,7 +508,7 @@ func (s *LyskServer) UpdateChampionshipsRecord(c *gin.Context) {
 		return
 	}
 
-	record := Record{}
+	record := models.Record{}
 	record.Id = recordId
 	record.RowNumber = existingRecord.RowNumber
 	record.UserID = existingRecord.UserID
@@ -511,6 +531,8 @@ func (s *LyskServer) UpdateChampionshipsRecord(c *gin.Context) {
 	record.Stage = fmt.Sprintf("%v", input["阶数"])
 	record.Weapon = fmt.Sprintf("%v", input["武器"])
 	record.Buff = fmt.Sprintf("%v", input["加成"])
+	record.TotalLevel = fmt.Sprintf("%v", input["卡总等级"])
+	record.Note = fmt.Sprintf("%v", input["备注"])
 
 	if _, err := record.ValidateChampionships(); err != nil {
 		logrus.Errorf("[Championships] Record validation failed: %v", err)
@@ -570,5 +592,82 @@ func (s *LyskServer) GetRanking(c *gin.Context) {
 	ranking := s.orbitRecordStore.GetRanking(userId.(string))
 
 	c.JSON(http.StatusOK, ranking)
+}
 
+func (s *LyskServer) CreateUser(c *gin.Context) {
+	var user models.User
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+	user.ID = userId.(string)
+
+	user, ok := s.userStore.Get(userId.(string))
+	if ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "用户已存在"})
+		return
+	}
+
+	createdUser, err := s.userSheetClient.ProcessUser(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	s.userStore.Insert(*createdUser)
+	c.JSON(http.StatusOK, createdUser)
+}
+
+func (s *LyskServer) GetUser(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+	user, ok := s.userStore.Get(userId.(string))
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
+func (s *LyskServer) UpdateUser(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+	var user models.User
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	user.ID = userId.(string)
+
+	currentUser, ok := s.userStore.Get(userId.(string))
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	user.RowNumber = currentUser.RowNumber
+
+	if err := s.userSheetClient.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.userStore.Update(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
