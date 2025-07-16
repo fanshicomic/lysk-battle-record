@@ -126,7 +126,7 @@ func (r Record) validateCommon() (bool, error) {
 	}
 
 	if !r.validateTotalLevel() {
-		return false, fmt.Errorf("卡面总等级错误, 请填写实际卡面总等级。如不确定请填写 0: %s", r.TotalLevel)
+		return false, fmt.Errorf("卡面总等级错误, 请填写实际卡面总等级。如不确定请填留空: %s", r.TotalLevel)
 	}
 
 	if pass, err := r.ValidateNote(); !pass {
@@ -514,7 +514,7 @@ func (r Record) validateTotalLevel() bool {
 	}
 
 	totalLevel, err := strconv.Atoi(r.TotalLevel)
-	if err != nil || totalLevel < 0 || totalLevel > 480 {
+	if err != nil || totalLevel <= 0 || totalLevel > 480 {
 		return false
 	}
 
