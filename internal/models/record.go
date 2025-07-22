@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/kirklin/go-swd"
 )
@@ -126,7 +127,7 @@ func (r Record) validateCommon() (bool, error) {
 	}
 
 	if !r.validateTotalLevel() {
-		return false, fmt.Errorf("卡面总等级错误, 请填写实际卡面总等级。如不确定请填留空: %s", r.TotalLevel)
+		return false, fmt.Errorf("卡面总等级错误, 请填写卡面等级总和。如不确定请填留空: %s", r.TotalLevel)
 	}
 
 	if pass, err := r.ValidateNote(); !pass {
@@ -522,6 +523,10 @@ func (r Record) validateTotalLevel() bool {
 }
 
 func (r Record) ValidateNote() (bool, error) {
+	if utf8.RuneCountInString(r.Note) > 20 {
+		return false, fmt.Errorf("备注最长20个字: %s", r.Note)
+	}
+
 	detector, err := swd.New()
 	if err != nil {
 		log.Fatal(err)
@@ -542,7 +547,7 @@ func (r Record) ValidateNote() (bool, error) {
 	}
 
 	if detector.Detect(r.Note) {
-		return false, fmt.Errorf("备注中包含敏感词: %s", r.Note)
+		return false, fmt.Errorf("备注中包含敏感词")
 	}
 
 	return true, nil
@@ -569,10 +574,10 @@ func (r Record) ValidateChampionships() (bool, error) {
 }
 
 func (r Record) GetHash() string {
-	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuff,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
-		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff,
+		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff, r.TotalLevel,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

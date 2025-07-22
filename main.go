@@ -1,8 +1,6 @@
 package main
 
 import (
-	"lysk-battle-record/internal/datastores"
-	"lysk-battle-record/internal/sheet_clients"
 	"os"
 	"time"
 
@@ -10,11 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"lysk-battle-record/internal"
+	"lysk-battle-record/internal/datastores"
+	"lysk-battle-record/internal/sheet_clients"
 )
 
 const (
 	spreadsheetID     = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
-	orbitSheetName    = "轨道测试"
+	orbitSheetName    = "轨道"
 	championSheetName = "锦标赛"
 	userSheetName     = "用户"
 )
