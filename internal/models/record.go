@@ -1,13 +1,16 @@
-package internal
+package models
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kirklin/go-swd"
 )
 
 type Record struct {
@@ -28,6 +31,8 @@ type Record struct {
 	WeakenBoost  string `json:"虚弱增伤"`
 	OathBoost    string `json:"誓约增伤"`
 	OathRegen    string `json:"誓约回能"`
+	TotalLevel   string `json:"卡总等级"`
+	Note         string `json:"备注"`
 	Partner      string `json:"搭档身份"`
 	SetCard      string `json:"日卡"`
 	Stage        string `json:"阶数"`
@@ -37,89 +42,78 @@ type Record struct {
 	Deleted      bool   `json:"deleted"`
 }
 
-type User struct {
-	OpenID     string `json:"openid"`
-	SessionKey string `json:"session_key"`
-}
-
-type RankingItem struct {
-	OpenID       string `json:"openid"`
-	Contribution int32  `json:"contribution"`
-	Rank         int    `json:"rank"`
-}
-
 type Records []Record
 
-func (r Record) ValidateCommon() (bool, error) {
+func (r Record) validateCommon() (bool, error) {
 	if !r.validateLevelType() {
 		return false, fmt.Errorf("无效的关卡类型: %s", r.LevelType)
 	}
 
-	if !r.ValidateAttack() {
+	if !r.validateAttack() {
 		return false, fmt.Errorf("攻击数值错误: %s", r.Attack)
 	}
 
-	if _, err := r.ValidateDefence(); err != nil {
+	if _, err := r.validateDefence(); err != nil {
 		return false, err
 	}
 
-	if _, err := r.ValidateHP(); err != nil {
+	if _, err := r.validateHP(); err != nil {
 		return false, err
 	}
 
-	if !r.ValidateMatching() {
+	if !r.validateMatching() {
 		return false, fmt.Errorf("对谱类型错误: %s", r.Matching)
 	}
 
-	if !r.ValidateMatchingBuff() {
+	if !r.validateMatchingBuff() {
 		return false, fmt.Errorf("对谱加成错误: %s", r.MatchingBuff)
 	}
 
-	if !r.ValidateCritRate() {
+	if !r.validateCritRate() {
 		return false, fmt.Errorf("暴击率错误: %s", r.CritRate)
 	}
 
-	if !r.ValidateCritDmg() {
+	if !r.validateCritDmg() {
 		return false, fmt.Errorf("暴击伤害错误: %s", r.CritDmg)
 	}
 
-	if !r.ValidateWeakenBoost() {
+	if !r.validateWeakenBoost() {
 		return false, fmt.Errorf("虚弱增伤错误: %s", r.WeakenBoost)
 	}
 
-	if !r.ValidateOathBoost() {
+	if !r.validateOathBoost() {
 		return false, fmt.Errorf("誓约增伤错误: %s", r.OathBoost)
 	}
 
-	if !r.ValidateOathRegen() {
+	if !r.validateOathRegen() {
 		return false, fmt.Errorf("誓约回能错误: %s", r.OathRegen)
 	}
 
-	if !r.ValidateEnergyRegen() {
+	if !r.validateEnergyRegen() {
 		return false, fmt.Errorf("加速回能错误: %s", r.EnergyRegen)
 	}
 
-	if !r.ValidateRegen() {
+	if !r.validateRegen() {
 		return false, fmt.Errorf("回能总和错误: %s + %s，面板总回能不能大于48", r.EnergyRegen, r.OathRegen)
 	}
 
-	if !r.ValidatePartner() {
+	if !r.validatePartner() {
 		return false, fmt.Errorf("搭档身份错误: %s", r.Partner)
 	}
 
-	if !r.ValidateSetCard() {
+	if !r.validateSetCard() {
 		return false, fmt.Errorf("日卡错误: %s", r.SetCard)
 	}
 
-	if !r.ValidateStage() {
+	if !r.validateStage() {
 		return false, fmt.Errorf("阶数错误: %s", r.Stage)
 	}
 
-	if !r.ValidateWeapon() {
+	if !r.validateWeapon() {
 		return false, fmt.Errorf("武器错误: %s", r.Weapon)
 	}
 
-	if !r.ValidatePartnerSetCard() {
+	if !r.validatePartnerSetCard() {
 		return false, fmt.Errorf("搭档身份与日卡不匹配: %s - %s", r.Partner, r.SetCard)
 	}
 
@@ -131,38 +125,46 @@ func (r Record) ValidateCommon() (bool, error) {
 		return false, fmt.Errorf("有套装时阶数不能为无套装: %s", r.Stage)
 	}
 
+	if !r.validateTotalLevel() {
+		return false, fmt.Errorf("卡面总等级错误, 请填写实际卡面总等级。如不确定请填写 0: %s", r.TotalLevel)
+	}
+
+	if pass, err := r.ValidateNote(); !pass {
+		return false, err
+	}
+
 	return true, nil
 }
 
 func (r Record) validateLevelType() bool {
 	validTypes := map[string]bool{
-		"光":  true,
-		"火":  true,
-		"冰":  true,
+		"光":   true,
+		"火":   true,
+		"冰":   true,
 		"能量": true,
 		"引力": true,
 		"开放": true,
-		"A4": true,
-		"B4": true,
-		"C4": true,
+		"A4":   true,
+		"B4":   true,
+		"C4":   true,
 	}
 	return validTypes[r.LevelType]
 }
 
-func (r Record) ValidateLevelNumber() bool {
+func (r Record) validateLevelNumber() bool {
 	maxEasyLevelNumber := map[string]int{
-		"光":  180,
-		"火":  210,
-		"冰":  180,
+		"光":   180,
+		"火":   210,
+		"冰":   180,
 		"能量": 150,
 		"引力": 120,
 		"开放": 300,
 	}
 
 	maxHardLevelNumber := map[string]int{
-		"光":  0,
-		"火":  0,
-		"冰":  0,
+		"光":   0,
+		"火":   0,
+		"冰":   0,
 		"能量": 0,
 		"引力": 0,
 		"开放": 60,
@@ -186,7 +188,7 @@ func (r Record) ValidateLevelNumber() bool {
 	return true
 }
 
-func (r Record) ValidateLevelMode() bool {
+func (r Record) validateLevelMode() bool {
 	validModes := map[string]bool{
 		"稳定": true,
 		"波动": true,
@@ -203,7 +205,7 @@ func (r Record) ValidateLevelMode() bool {
 	return true
 }
 
-func (r Record) ValidateAttack() bool {
+func (r Record) validateAttack() bool {
 	maxAttack := 1229 * 1.9 * 6
 	n, err := strconv.ParseFloat(r.Attack, 64)
 	if err != nil || n <= 0 || n > maxAttack {
@@ -213,7 +215,7 @@ func (r Record) ValidateAttack() bool {
 	return true
 }
 
-func (r Record) ValidateDefence() (bool, error) {
+func (r Record) validateDefence() (bool, error) {
 	maxDefence := 614 * 1.9 * 6
 	if r.Defense == "" {
 		r.Defense = "0"
@@ -224,9 +226,9 @@ func (r Record) ValidateDefence() (bool, error) {
 	}
 
 	defencePartner := map[string]bool{
-		"光猎":     true,
-		"永恒先知":   true,
-		"远空执舰官":  true,
+		"光猎":         true,
+		"永恒先知":     true,
+		"远空执舰官":   true,
 		"利莫里亚海神": true,
 	}
 
@@ -237,7 +239,7 @@ func (r Record) ValidateDefence() (bool, error) {
 	return true, nil
 }
 
-func (r Record) ValidateHP() (bool, error) {
+func (r Record) validateHP() (bool, error) {
 	maxHP := 24594 * 1.9 * 6
 	if r.HP == "" {
 		r.HP = "0"
@@ -260,41 +262,41 @@ func (r Record) ValidateHP() (bool, error) {
 	return true, nil
 }
 
-func (r Record) ValidateMatching() bool {
+func (r Record) validateMatching() bool {
 	validMatching := map[string]bool{
-		"顺":   true,
-		"逆":   true,
+		"顺":     true,
+		"逆":     true,
 		"不确定": true,
 	}
 	return validMatching[r.Matching]
 }
 
-func (r Record) ValidateMatchingBuff() bool {
+func (r Record) validateMatchingBuff() bool {
 	validMatchingBuff := map[string]bool{
-		"30":  true,
-		"25":  true,
-		"20":  true,
-		"15":  true,
-		"10":  true,
-		"5":   true,
-		"0":   true,
+		"30":     true,
+		"25":     true,
+		"20":     true,
+		"15":     true,
+		"10":     true,
+		"5":      true,
+		"0":      true,
 		"不确定": true,
 	}
 	return validMatchingBuff[r.MatchingBuff]
 }
 
-func (r Record) ValidateWeapon() bool {
+func (r Record) validateWeapon() bool {
 	validWeapons := map[string]bool{
-		"专武":  true,
-		"重剑":  true,
-		"手枪":  true,
-		"法杖":  true,
+		"专武":   true,
+		"重剑":   true,
+		"手枪":   true,
+		"法杖":   true,
 		"单手剑": true,
 	}
 	return validWeapons[r.Weapon]
 }
 
-func (r Record) ValidateBuff() bool {
+func (r Record) validateBuff() bool {
 	validBuffs := map[string]bool{
 		"0":  true,
 		"10": true,
@@ -305,7 +307,7 @@ func (r Record) ValidateBuff() bool {
 	return validBuffs[r.Buff]
 }
 
-func (r Record) ValidatePartnerSetCard() bool {
+func (r Record) validatePartnerSetCard() bool {
 	partnerSetCardMap := map[string]map[string]bool{
 		"沈星回": {
 			"夜誓": true, "末夜": true, "逐光": true, "鎏光": true, "睱日": true, "弦光": true, "心晴": true, "匿光": true, "无套装": true,
@@ -344,7 +346,7 @@ func (r Record) ValidatePartnerSetCard() bool {
 	return setMap[r.SetCard]
 }
 
-func (r Record) ValidateCritRate() bool {
+func (r Record) validateCritRate() bool {
 	n, err := strconv.ParseFloat(r.CritRate, 64)
 	if err != nil || n < 0 || n > 100 {
 		return false
@@ -353,7 +355,7 @@ func (r Record) ValidateCritRate() bool {
 	return true
 }
 
-func (r Record) ValidateCritDmg() bool {
+func (r Record) validateCritDmg() bool {
 	maxCritDmg := float64(150 + 20*2) // 20 max from each sun card itself
 	maxCritDmg += 22.4 * 4            // 22.4 max from each moon card core
 	maxCritDmg += 14.4 * 2 * 6        // 14.4 max from each core attribute
@@ -365,7 +367,7 @@ func (r Record) ValidateCritDmg() bool {
 	return true
 }
 
-func (r Record) ValidateEnergyRegen() bool {
+func (r Record) validateEnergyRegen() bool {
 	if r.EnergyRegen == "" {
 		return true
 	}
@@ -378,7 +380,7 @@ func (r Record) ValidateEnergyRegen() bool {
 	return true
 }
 
-func (r Record) ValidateOathRegen() bool {
+func (r Record) validateOathRegen() bool {
 	if r.OathRegen == "" {
 		return true
 	}
@@ -391,7 +393,7 @@ func (r Record) ValidateOathRegen() bool {
 	return true
 }
 
-func (r Record) ValidateWeakenBoost() bool {
+func (r Record) validateWeakenBoost() bool {
 	maxWeakenBoost := 18.2 * 4   // 18.2 max from each moon card core
 	maxWeakenBoost += 11 * 2 * 6 // 11 max from each core attribute
 	n, err := strconv.ParseFloat(r.WeakenBoost, 64)
@@ -402,7 +404,7 @@ func (r Record) ValidateWeakenBoost() bool {
 	return true
 }
 
-func (r Record) ValidateOathBoost() bool {
+func (r Record) validateOathBoost() bool {
 	if r.OathBoost == "" {
 		return true
 	}
@@ -417,7 +419,7 @@ func (r Record) ValidateOathBoost() bool {
 	return true
 }
 
-func (r Record) ValidateRegen() bool {
+func (r Record) validateRegen() bool {
 	energy, _ := strconv.ParseFloat(r.EnergyRegen, 64)
 	oath, _ := strconv.ParseFloat(r.OathRegen, 64)
 
@@ -428,105 +430,145 @@ func (r Record) ValidateRegen() bool {
 	return true
 }
 
-func (r Record) ValidatePartner() bool {
+func (r Record) validatePartner() bool {
 	validPartner := map[string]bool{
 		"暗蚀国王":     true,
-		"光猎":       true,
+		"光猎":         true,
 		"逐光骑士":     true,
 		"遥远少年":     true,
-		"Evol特警":   true,
+		"Evol特警":     true,
 		"深空猎人":     true,
 		"九黎司命":     true,
 		"永恒先知":     true,
 		"极地军医":     true,
-		"黎明抹杀者":    true,
+		"黎明抹杀者":   true,
 		"临空医生":     true,
-		"利莫里亚海神":   true,
+		"利莫里亚海神": true,
 		"潮汐之神":     true,
-		"深海潜行者":    true,
+		"深海潜行者":   true,
 		"画坛新锐":     true,
 		"海妖魅影":     true,
-		"艺术家":      true,
+		"艺术家":       true,
 		"深渊主宰":     true,
-		"无尽掠夺者":    true,
+		"无尽掠夺者":   true,
 		"异界来客":     true,
 		"终极兵器X-02": true,
-		"远空执舰官":    true,
-		"深空飞行员":    true,
+		"远空执舰官":   true,
+		"深空飞行员":   true,
 	}
 
 	return validPartner[r.Partner]
 }
 
-func (r Record) ValidateSetCard() bool {
+func (r Record) validateSetCard() bool {
 	validSetCard := map[string]bool{
-		"夜誓":  true,
-		"鎏光":  true,
-		"末夜":  true,
-		"逐光":  true,
-		"睱日":  true,
-		"弦光":  true,
-		"心晴":  true,
-		"匿光":  true,
-		"拥雪":  true,
-		"永恒":  true,
-		"夜色":  true,
-		"静谧":  true,
-		"深林":  true,
-		"雾海":  true,
-		"神殿":  true,
-		"深海":  true,
-		"坠浪":  true,
-		"点染":  true,
-		"斑斓":  true,
-		"碧海":  true,
-		"深渊":  true,
-		"掠心":  true,
-		"锋尖":  true,
-		"戮夜":  true,
-		"寂路":  true,
-		"远空":  true,
-		"长昼":  true,
-		"离途":  true,
+		"夜誓":   true,
+		"鎏光":   true,
+		"末夜":   true,
+		"逐光":   true,
+		"睱日":   true,
+		"弦光":   true,
+		"心晴":   true,
+		"匿光":   true,
+		"拥雪":   true,
+		"永恒":   true,
+		"夜色":   true,
+		"静谧":   true,
+		"深林":   true,
+		"雾海":   true,
+		"神殿":   true,
+		"深海":   true,
+		"坠浪":   true,
+		"点染":   true,
+		"斑斓":   true,
+		"碧海":   true,
+		"深渊":   true,
+		"掠心":   true,
+		"锋尖":   true,
+		"戮夜":   true,
+		"寂路":   true,
+		"远空":   true,
+		"长昼":   true,
+		"离途":   true,
 		"无套装": true,
 	}
 
 	return validSetCard[r.SetCard]
 }
 
-func (r Record) ValidateStage() bool {
+func (r Record) validateStage() bool {
 	validStages := map[string]bool{
-		"I":   true,
-		"II":  true,
-		"III": true,
-		"IV":  true,
+		"I":      true,
+		"II":     true,
+		"III":    true,
+		"IV":     true,
 		"无套装": true,
 	}
 
 	return validStages[r.Stage]
 }
 
+func (r Record) validateTotalLevel() bool {
+	if r.TotalLevel == "" {
+		return true
+	}
+
+	totalLevel, err := strconv.Atoi(r.TotalLevel)
+	if err != nil || totalLevel < 0 || totalLevel > 480 {
+		return false
+	}
+
+	return true
+}
+
+func (r Record) ValidateNote() (bool, error) {
+	detector, err := swd.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	customWords := map[string]swd.Category{
+		"涉黄":       swd.Pornography,    // 涉黄分类
+		"涉政":       swd.Political,      // 涉政分类
+		"赌博词汇":   swd.Gambling,       // 赌博分类
+		"毒品词汇":   swd.Drugs,          // 毒品分类
+		"脏话词汇":   swd.Profanity,      // 脏话分类
+		"歧视词汇":   swd.Discrimination, // 歧视分类
+		"诈骗词汇":   swd.Scam,           // 诈骗分类
+		"自定义词汇": swd.Custom,         // 自定义分类
+	}
+	if err := detector.AddWords(customWords); err != nil {
+		log.Fatal(err)
+	}
+
+	if detector.Detect(r.Note) {
+		return false, fmt.Errorf("备注中包含敏感词: %s", r.Note)
+	}
+
+	return true, nil
+}
+
 func (r Record) ValidateOrbit() (bool, error) {
-	if !r.ValidateLevelNumber() {
+	if !r.validateLevelNumber() {
 		return false, fmt.Errorf("关数错误: %s - %s - %s", r.LevelType, r.LevelMode, r.LevelNumber)
 	}
 
-	if !r.ValidateLevelMode() {
+	if !r.validateLevelMode() {
 		return false, fmt.Errorf("关卡模式错误: %s", r.LevelMode)
 	}
 
-	return r.ValidateCommon()
+	return r.validateCommon()
 }
 
 func (r Record) ValidateChampionships() (bool, error) {
-	if !r.ValidateBuff() {
+	if !r.validateBuff() {
 		return false, fmt.Errorf("锦标赛加成错误: %s", r.Buff)
 	}
 
-	return r.ValidateCommon()
+	return r.validateCommon()
 }
 
-func (r Record) getHash() string {
+func (r Record) GetHash() string {
 	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuff,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
@@ -536,7 +578,7 @@ func (r Record) getHash() string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (r Records) filter(filterFunc func(Record) bool) []Record {
+func (r Records) Filter(filterFunc func(Record) bool) []Record {
 	result := Records{}
 	for _, r := range r {
 		if filterFunc(r) {
@@ -546,7 +588,7 @@ func (r Records) filter(filterFunc func(Record) bool) []Record {
 	return result
 }
 
-func (r Records) sortByTimeDesc() []Record {
+func (r Records) SortByTimeDesc() []Record {
 	sort.Slice(r, func(i, j int) bool {
 		ti, _ := time.Parse("2006-01-02T15:04:05Z", r[i].Time)
 		tj, _ := time.Parse("2006-01-02T15:04:05Z", r[j].Time)
@@ -555,7 +597,7 @@ func (r Records) sortByTimeDesc() []Record {
 	return r
 }
 
-func (r Records) pagination(offset, size int) []Record {
+func (r Records) Pagination(offset, size int) []Record {
 	total := len(r)
 	if offset >= total {
 		return []Record{}

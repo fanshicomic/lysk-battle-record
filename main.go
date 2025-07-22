@@ -1,6 +1,8 @@
 package main
 
 import (
+	"lysk-battle-record/internal/datastores"
+	"lysk-battle-record/internal/sheet_clients"
 	"os"
 	"time"
 
@@ -14,20 +16,26 @@ const (
 	spreadsheetID     = "1-ORnXBnav4JVtP673Oio5sNdVpk0taUSzG3kWZqhIuY"
 	orbitSheetName    = "轨道测试"
 	championSheetName = "锦标赛"
+	userSheetName     = "用户"
 )
 
 func main() {
-	orbitGoogleSheetClient := internal.NewRecordSheetClient(spreadsheetID, orbitSheetName)
-	orbitRecordStore := internal.NewInMemoryRecordStore(orbitGoogleSheetClient)
+	orbitGoogleSheetClient := sheet_clients.NewRecordSheetClient(spreadsheetID, orbitSheetName)
+	orbitRecordStore := datastores.NewInMemoryRecordStore(orbitGoogleSheetClient)
 
-	championshipsGoogleSheetClient := internal.NewRecordSheetClient(spreadsheetID, championSheetName)
-	championshipsRecordStore := internal.NewInMemoryRecordStore(championshipsGoogleSheetClient)
+	championshipsGoogleSheetClient := sheet_clients.NewRecordSheetClient(spreadsheetID, championSheetName)
+	championshipsRecordStore := datastores.NewInMemoryRecordStore(championshipsGoogleSheetClient)
+
+	userGoogleSheetClient := sheet_clients.NewUserSheetClient(spreadsheetID, userSheetName)
+	userStore := datastores.NewInMemoryUserStore(userGoogleSheetClient)
 
 	server := internal.InitLyskServer(
 		orbitRecordStore,
 		orbitGoogleSheetClient,
 		championshipsRecordStore,
 		championshipsGoogleSheetClient,
+		userStore,
+		userGoogleSheetClient,
 		internal.NewAuthenticator(),
 	)
 
@@ -62,6 +70,10 @@ func main() {
 		authRequired.DELETE("/championships-record/:id", server.DeleteChampionshipsRecord)
 		authRequired.GET("/my-orbit-record", server.GetMyOrbitRecords)
 		authRequired.GET("/all-my-orbit-records", server.GetAllMyOrbitRecords)
+
+		authRequired.POST("/user", server.CreateUser)
+		authRequired.GET("/user", server.GetUser)
+		authRequired.PUT("/user", server.UpdateUser)
 	}
 
 	r.GET("/orbit-records", server.GetOrbitRecords)
