@@ -247,6 +247,7 @@ func (r Record) ValidateHP() (bool, error) {
 	hpPartner := map[string]bool{
 		"潮汐之神": true,
 		"深渊主宰": true,
+		"暗蚀国王": true,
 	}
 
 	if _, ok := hpPartner[r.Partner]; ok && n == 0 {
@@ -304,7 +305,7 @@ func (r Record) ValidateBuff() bool {
 func (r Record) ValidatePartnerSetCard() bool {
 	partnerSetCardMap := map[string]map[string]bool{
 		"沈星回": {
-			"末夜": true, "逐光": true, "睱日": true, "弦光": true, "心晴": true, "匿光": true, "无套装": true,
+			"夜誓": true, "末夜": true, "逐光": true, "鎏光": true, "睱日": true, "弦光": true, "心晴": true, "匿光": true, "无套装": true,
 		},
 		"黎深": {
 			"拥雪": true, "永恒": true, "夜色": true, "静谧": true, "心晴": true, "深林": true, "无套装": true,
@@ -322,7 +323,7 @@ func (r Record) ValidatePartnerSetCard() bool {
 
 	// 搭档身份到主角名的映射
 	partnerToMain := map[string]string{
-		"光猎": "沈星回", "逐光骑士": "沈星回", "遥远少年": "沈星回", "Evol特警": "沈星回", "深空猎人": "沈星回",
+		"暗蚀国王": "沈星回", "光猎": "沈星回", "逐光骑士": "沈星回", "遥远少年": "沈星回", "Evol特警": "沈星回", "深空猎人": "沈星回",
 		"九黎司命": "黎深", "永恒先知": "黎深", "极地军医": "黎深", "黎明抹杀者": "黎深", "临空医生": "黎深",
 		"利莫里亚海神": "祁煜", "潮汐之神": "祁煜", "深海潜行者": "祁煜", "画坛新锐": "祁煜", "海妖魅影": "祁煜", "艺术家": "祁煜",
 		"深渊主宰": "秦彻", "无尽掠夺者": "秦彻", "异界来客": "秦彻",
@@ -426,6 +427,7 @@ func (r Record) ValidateRegen() bool {
 
 func (r Record) ValidatePartner() bool {
 	validPartner := map[string]bool{
+		"暗蚀国王":     true,
 		"光猎":       true,
 		"逐光骑士":     true,
 		"遥远少年":     true,
@@ -455,6 +457,8 @@ func (r Record) ValidatePartner() bool {
 
 func (r Record) ValidateSetCard() bool {
 	validSetCard := map[string]bool{
+		"夜誓":  true,
+		"鎏光":  true,
 		"末夜":  true,
 		"逐光":  true,
 		"睱日":  true,
