@@ -61,6 +61,44 @@ func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
 	c.JSON(http.StatusOK, records)
 }
 
+func (s *LyskServer) GetMyChampionshipsRecords(c *gin.Context) {
+	level := c.Query("level")
+	offsetStr := c.DefaultQuery("offset", "0")
+	offset, _ := strconv.Atoi(offsetStr)
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
+		Filters: map[string]string{
+			"关卡":   level,
+			"用户ID": userId.(string),
+		},
+		Offset: offset,
+	})
+	c.JSON(http.StatusOK, record)
+}
+
+func (s *LyskServer) GetAllMyChampionshipsRecords(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	offsetStr := c.DefaultQuery("offset", "0")
+	offset, _ := strconv.Atoi(offsetStr)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
+		return
+	}
+
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
+		Filters: map[string]string{
+			"用户ID": userId.(string),
+		},
+		Offset: offset,
+	})
+	c.JSON(http.StatusOK, record)
+}
+
 // CRUD methods
 
 func (s *LyskServer) ProcessChampionshipsRecord(c *gin.Context) {
