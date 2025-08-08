@@ -7,9 +7,10 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"lysk-battle-record/internal"
 	"lysk-battle-record/internal/datastores"
+	"lysk-battle-record/internal/pkg"
 	"lysk-battle-record/internal/sheet_clients"
+	"lysk-battle-record/internal/usecases"
 )
 
 const (
@@ -29,14 +30,14 @@ func main() {
 	userGoogleSheetClient := sheet_clients.NewUserSheetClient(spreadsheetID, userSheetName)
 	userStore := datastores.NewInMemoryUserStore(userGoogleSheetClient)
 
-	server := internal.InitLyskServer(
+	server := usecases.InitLyskServer(
 		orbitRecordStore,
 		orbitGoogleSheetClient,
 		championshipsRecordStore,
 		championshipsGoogleSheetClient,
 		userStore,
 		userGoogleSheetClient,
-		internal.NewAuthenticator(),
+		pkg.NewAuthenticator(),
 	)
 
 	r := gin.Default()

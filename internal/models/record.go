@@ -4,14 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/kirklin/go-swd"
+	"lysk-battle-record/internal/pkg"
 )
 
 type Record struct {
@@ -527,26 +526,12 @@ func (r Record) ValidateNote() (bool, error) {
 		return false, fmt.Errorf("备注最长20个字: %s", r.Note)
 	}
 
-	detector, err := swd.New()
+	detector, err := pkg.NewDetector()
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
 
-	customWords := map[string]swd.Category{
-		"涉黄":       swd.Pornography,    // 涉黄分类
-		"涉政":       swd.Political,      // 涉政分类
-		"赌博词汇":   swd.Gambling,       // 赌博分类
-		"毒品词汇":   swd.Drugs,          // 毒品分类
-		"脏话词汇":   swd.Profanity,      // 脏话分类
-		"歧视词汇":   swd.Discrimination, // 歧视分类
-		"诈骗词汇":   swd.Scam,           // 诈骗分类
-		"自定义词汇": swd.Custom,         // 自定义分类
-	}
-	if err := detector.AddWords(customWords); err != nil {
-		log.Fatal(err)
-	}
-
-	if detector.Detect(r.Note) {
+	if detector.ContainsSensitiveWords(r.Note) {
 		return false, fmt.Errorf("备注中包含敏感词")
 	}
 

@@ -33,11 +33,13 @@ type InMemoryRecordStore struct {
 }
 
 type QueryOptions struct {
-	Filters map[string]string
-	SortBy  string // 排序字段
-	Desc    bool   // 是否降序
-	Offset  int
-	Limit   int
+	Filters   map[string]string
+	SortBy    string // 排序字段
+	Desc      bool   // 是否降序
+	Offset    int
+	Limit     int
+	TimeStart time.Time
+	TimeEnd   time.Time
 }
 
 type QueryResult struct {
@@ -125,7 +127,18 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 	for k, v := range opt.Filters {
 		filterFunc := getFilters(k, v)
 		res = res.Filter(filterFunc)
-		res = res.Filter(filterOutDeleted())
+	}
+	res = res.Filter(filterOutDeleted())
+
+	if !opt.TimeStart.IsZero() && !opt.TimeEnd.IsZero() {
+		res = res.Filter(func(r models.Record) bool {
+			recordTime, err := time.Parse(time.RFC3339, r.Time)
+			if err != nil {
+				logrus.Errorf("failed to parse record time %s: %v", r.Time, err)
+				return false
+			}
+			return recordTime.After(opt.TimeStart) && recordTime.Before(opt.TimeEnd)
+		})
 	}
 	count := len(res)
 
