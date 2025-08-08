@@ -40,7 +40,7 @@ func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 	offset, _ := strconv.Atoi(offsetStr)
 	start, end := getCurrentChampionshipsRound()
 
-	records := s.championshipsRecordStore.Query(datastores.QueryOptions{
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
 			"关卡": level,
 		},
@@ -48,17 +48,19 @@ func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 		TimeStart: start,
 		TimeEnd:   end,
 	})
-	c.JSON(http.StatusOK, records)
+	s.populateNicknameForRecords(record.Records)
+	c.JSON(http.StatusOK, record)
 }
 
 func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
 	start, end := getCurrentChampionshipsRound()
-	records := s.championshipsRecordStore.Query(datastores.QueryOptions{
+	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Limit:     5,
 		TimeStart: start,
 		TimeEnd:   end,
 	})
-	c.JSON(http.StatusOK, records)
+	s.populateNicknameForRecords(record.Records)
+	c.JSON(http.StatusOK, record)
 }
 
 func (s *LyskServer) GetMyChampionshipsRecords(c *gin.Context) {
@@ -78,6 +80,7 @@ func (s *LyskServer) GetMyChampionshipsRecords(c *gin.Context) {
 		},
 		Offset: offset,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 
@@ -96,6 +99,7 @@ func (s *LyskServer) GetAllMyChampionshipsRecords(c *gin.Context) {
 		},
 		Offset: offset,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 

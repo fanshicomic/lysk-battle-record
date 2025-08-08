@@ -17,6 +17,7 @@ type Record struct {
 	Id           string `json:"id"`
 	RowNumber    int    `json:"row_number"`
 	UserID       string `json:"userID"`
+	Nickname     string `json:"nickname,omitempty"`
 	LevelType    string `json:"关卡"`
 	LevelNumber  string `json:"关数"`
 	LevelMode    string `json:"模式"`

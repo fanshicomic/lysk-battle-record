@@ -34,6 +34,7 @@ func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
 		},
 		Offset: offset,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 
@@ -41,6 +42,7 @@ func (s *LyskServer) GetLatestOrbitRecords(c *gin.Context) {
 	record := s.orbitRecordStore.Query(datastores.QueryOptions{
 		Limit: 5,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 
@@ -71,6 +73,7 @@ func (s *LyskServer) GetMyOrbitRecords(c *gin.Context) {
 		},
 		Offset: offset,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 
@@ -89,6 +92,7 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 		},
 		Offset: offset,
 	})
+	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
 }
 
