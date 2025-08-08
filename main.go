@@ -66,11 +66,16 @@ func main() {
 		authRequired.POST("/orbit-record", server.ProcessOrbitRecord)
 		authRequired.PUT("/orbit-record/:id", server.UpdateOrbitRecord)
 		authRequired.DELETE("/orbit-record/:id", server.DeleteOrbitRecord)
+
 		authRequired.POST("/championships-record", server.ProcessChampionshipsRecord)
 		authRequired.PUT("/championships-record/:id", server.UpdateChampionshipsRecord)
 		authRequired.DELETE("/championships-record/:id", server.DeleteChampionshipsRecord)
+
 		authRequired.GET("/my-orbit-record", server.GetMyOrbitRecords)
 		authRequired.GET("/all-my-orbit-records", server.GetAllMyOrbitRecords)
+
+		authRequired.GET("/my-championships-record", server.GetMyChampionshipsRecords)
+		authRequired.GET("/all-my-championships-records", server.GetAllMyChampionshipsRecords)
 
 		authRequired.POST("/user", server.CreateUser)
 		authRequired.GET("/user", server.GetUser)

@@ -28,6 +28,8 @@ type Server interface {
 	// My Records
 	GetAllMyOrbitRecords(c *gin.Context)
 	GetMyOrbitRecords(c *gin.Context)
+	GetAllMyChampionshipsRecords(c *gin.Context)
+	GetMyChampionshipsRecords(c *gin.Context)
 
 	// Users
 	CreateUser(c *gin.Context)
