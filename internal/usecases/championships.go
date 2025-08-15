@@ -211,7 +211,7 @@ func (s *LyskServer) UpdateChampionshipsRecord(c *gin.Context) {
 	record.UserID = existingRecord.UserID
 	record.Time = existingRecord.Time
 
-	record.LevelType = pkg.GetValue(input, "关卡")
+	record.LevelType = existingRecord.LevelType
 	record.Attack = pkg.GetValue(input, "攻击")
 	record.HP = pkg.GetValue(input, "生命")
 	record.Defense = pkg.GetValue(input, "防御")
