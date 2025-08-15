@@ -40,6 +40,7 @@ type Record struct {
 	Weapon       string `json:"武器"`
 	Buff         string `json:"加成"`
 	Time         string `json:"时间"`
+	StarRank     string `json:"星级"`
 	Deleted      bool   `json:"deleted"`
 }
 
@@ -471,6 +472,21 @@ func (r Record) validateTotalLevel() bool {
 	return true
 }
 
+func (r Record) validateStarRank() bool {
+	if r.LevelMode != "波动" {
+		return r.StarRank == ""
+	}
+
+	validStarRanks := map[string]bool{
+		"零星": true,
+		"一星": true,
+		"二星": true,
+		"三星": true,
+	}
+
+	return validStarRanks[r.StarRank]
+}
+
 func (r Record) ValidateNote() (bool, error) {
 	if utf8.RuneCountInString(r.Note) > 20 {
 		return false, fmt.Errorf("备注最长20个字: %s", r.Note)
@@ -497,6 +513,10 @@ func (r Record) ValidateOrbit() (bool, error) {
 		return false, fmt.Errorf("关卡模式错误: %s", r.LevelMode)
 	}
 
+	//if !r.validateStarRank() {
+	//	return false, fmt.Errorf("波动关卡通关星级错误: %s", r.StarRank)
+	//}
+
 	if !r.validatePartnerAndLevelType() {
 		return false, fmt.Errorf("搭档身份与关卡类型不匹配: %s - %s", r.Partner, r.LevelType)
 	}
@@ -513,10 +533,10 @@ func (r Record) ValidateChampionships() (bool, error) {
 }
 
 func (r Record) GetHash() string {
-	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuff,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
-		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff, r.TotalLevel,
+		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff, r.TotalLevel, r.StarRank,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

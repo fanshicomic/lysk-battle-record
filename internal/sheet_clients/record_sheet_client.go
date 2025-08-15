@@ -114,6 +114,7 @@ func (c *RecordSheetClientImpl) FetchAllSheetData() ([]models.Record, error) {
 		r.SetCard = c.getValue(row, headerIndexMap, "日卡")
 		r.Stage = c.getValue(row, headerIndexMap, "阶数")
 		r.Weapon = c.getValue(row, headerIndexMap, "武器")
+		r.StarRank = c.getValue(row, headerIndexMap, "星级")
 		r.Buff = c.getValue(row, headerIndexMap, "加成")
 		r.TotalLevel = c.getValue(row, headerIndexMap, "卡总等级")
 		r.Note = c.getValue(row, headerIndexMap, "备注")
@@ -193,6 +194,8 @@ func (c *RecordSheetClientImpl) ProcessRecord(record models.Record) (*models.Rec
 			row[index] = record.Stage
 		case "武器":
 			row[index] = record.Weapon
+		case "星级":
+			row[index] = record.StarRank
 		case "加成":
 			row[index] = record.Buff
 		case "卡总等级":
@@ -294,6 +297,8 @@ func (c *RecordSheetClientImpl) UpdateRecord(record models.Record) error {
 			row[index] = record.Stage
 		case "武器":
 			row[index] = record.Weapon
+		case "星级":
+			row[index] = record.StarRank
 		case "加成":
 			row[index] = record.Buff
 		case "时间":
