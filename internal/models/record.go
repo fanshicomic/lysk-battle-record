@@ -98,14 +98,6 @@ func (r Record) validateCommon() (bool, error) {
 		return false, fmt.Errorf("回能总和错误: %s + %s，面板总回能不能大于48", r.EnergyRegen, r.OathRegen)
 	}
 
-	if !r.validatePartner() {
-		return false, fmt.Errorf("搭档身份错误: %s", r.Partner)
-	}
-
-	if !r.validateSetCard() {
-		return false, fmt.Errorf("日卡错误: %s", r.SetCard)
-	}
-
 	if !r.validateStage() {
 		return false, fmt.Errorf("阶数错误: %s", r.Stage)
 	}
@@ -309,42 +301,65 @@ func (r Record) validateBuff() bool {
 }
 
 func (r Record) validatePartnerSetCard() bool {
-	partnerSetCardMap := map[string]map[string]bool{
-		"沈星回": {
-			"夜誓": true, "末夜": true, "逐光": true, "鎏光": true, "睱日": true, "弦光": true, "心晴": true, "匿光": true, "无套装": true,
-		},
-		"黎深": {
-			"拥雪": true, "永恒": true, "夜色": true, "静谧": true, "心晴": true, "深林": true, "无套装": true,
-		},
-		"祁煜": {
-			"雾海": true, "神殿": true, "深海": true, "坠浪": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
-		},
-		"秦彻": {
-			"深渊": true, "掠心": true, "锋尖": true, "戮夜": true, "无套装": true,
-		},
-		"夏以昼": {
-			"寂路": true, "远空": true, "长昼": true, "离途": true, "无套装": true,
-		},
+	partnerMap := partnerIdentityMap()
+	setCardMap := partnerSetCardMap()
+
+	for mainChar, partners := range partnerMap {
+		for _, partner := range partners {
+			if partner == r.Partner {
+				if setCards, exists := setCardMap[mainChar]; exists {
+					return setCards[r.SetCard]
+				}
+				return false
+			}
+		}
+	}
+	return false
+}
+
+func (r Record) validatePartnerAndLevelType() bool {
+	levelPartnerMap := map[string]string{
+		"光":   "沈星回",
+		"火":   "祁煜",
+		"冰":   "黎深",
+		"能量": "秦彻",
+		"引力": "夏以昼",
 	}
 
-	// 搭档身份到主角名的映射
-	partnerToMain := map[string]string{
-		"暗蚀国王": "沈星回", "光猎": "沈星回", "逐光骑士": "沈星回", "遥远少年": "沈星回", "Evol特警": "沈星回", "深空猎人": "沈星回",
-		"九黎司命": "黎深", "永恒先知": "黎深", "极地军医": "黎深", "黎明抹杀者": "黎深", "临空医生": "黎深",
-		"利莫里亚海神": "祁煜", "潮汐之神": "祁煜", "深海潜行者": "祁煜", "画坛新锐": "祁煜", "海妖魅影": "祁煜", "艺术家": "祁煜",
-		"深渊主宰": "秦彻", "无尽掠夺者": "秦彻", "异界来客": "秦彻",
-		"终极兵器X-02": "夏以昼", "远空执舰官": "夏以昼", "深空飞行员": "夏以昼",
+	// Check if level type has specific partner requirement first
+	requiredMain, hasRequirement := levelPartnerMap[r.LevelType]
+	if !hasRequirement {
+		return true
 	}
 
-	main, ok := partnerToMain[r.Partner]
-	if !ok {
+	partnerMap := partnerIdentityMap()
+
+	// Find which main character this partner belongs to
+	var mainChar string
+	found := false
+	for mc, partners := range partnerMap {
+		for _, partner := range partners {
+			if partner == r.Partner {
+				mainChar = mc
+				found = true
+				break
+			}
+		}
+		if found {
+			break
+		}
+	}
+
+	if !found {
 		return false
 	}
-	setMap, ok := partnerSetCardMap[main]
-	if !ok {
+
+	// Check if partner matches required main character for this level type
+	if mainChar != requiredMain {
 		return false
 	}
-	return setMap[r.SetCard]
+
+	return true
 }
 
 func (r Record) validateCritRate() bool {
@@ -431,72 +446,6 @@ func (r Record) validateRegen() bool {
 	return true
 }
 
-func (r Record) validatePartner() bool {
-	validPartner := map[string]bool{
-		"暗蚀国王":     true,
-		"光猎":         true,
-		"逐光骑士":     true,
-		"遥远少年":     true,
-		"Evol特警":     true,
-		"深空猎人":     true,
-		"九黎司命":     true,
-		"永恒先知":     true,
-		"极地军医":     true,
-		"黎明抹杀者":   true,
-		"临空医生":     true,
-		"利莫里亚海神": true,
-		"潮汐之神":     true,
-		"深海潜行者":   true,
-		"画坛新锐":     true,
-		"海妖魅影":     true,
-		"艺术家":       true,
-		"深渊主宰":     true,
-		"无尽掠夺者":   true,
-		"异界来客":     true,
-		"终极兵器X-02": true,
-		"远空执舰官":   true,
-		"深空飞行员":   true,
-	}
-
-	return validPartner[r.Partner]
-}
-
-func (r Record) validateSetCard() bool {
-	validSetCard := map[string]bool{
-		"夜誓":   true,
-		"鎏光":   true,
-		"末夜":   true,
-		"逐光":   true,
-		"睱日":   true,
-		"弦光":   true,
-		"心晴":   true,
-		"匿光":   true,
-		"拥雪":   true,
-		"永恒":   true,
-		"夜色":   true,
-		"静谧":   true,
-		"深林":   true,
-		"雾海":   true,
-		"神殿":   true,
-		"深海":   true,
-		"坠浪":   true,
-		"点染":   true,
-		"斑斓":   true,
-		"碧海":   true,
-		"深渊":   true,
-		"掠心":   true,
-		"锋尖":   true,
-		"戮夜":   true,
-		"寂路":   true,
-		"远空":   true,
-		"长昼":   true,
-		"离途":   true,
-		"无套装": true,
-	}
-
-	return validSetCard[r.SetCard]
-}
-
 func (r Record) validateStage() bool {
 	validStages := map[string]bool{
 		"I":      true,
@@ -546,6 +495,10 @@ func (r Record) ValidateOrbit() (bool, error) {
 
 	if !r.validateLevelMode() {
 		return false, fmt.Errorf("关卡模式错误: %s", r.LevelMode)
+	}
+
+	if !r.validatePartnerAndLevelType() {
+		return false, fmt.Errorf("搭档身份与关卡类型不匹配: %s - %s", r.Partner, r.LevelType)
 	}
 
 	return r.validateCommon()
@@ -598,4 +551,34 @@ func (r Records) Pagination(offset, size int) []Record {
 		end = total
 	}
 	return r[offset:end]
+}
+
+func partnerSetCardMap() map[string]map[string]bool {
+	return map[string]map[string]bool{
+		"沈星回": {
+			"夜誓": true, "末夜": true, "逐光": true, "鎏光": true, "睱日": true, "弦光": true, "心晴": true, "匿光": true, "无套装": true,
+		},
+		"黎深": {
+			"拥雪": true, "永恒": true, "夜色": true, "静谧": true, "心晴": true, "深林": true, "无套装": true,
+		},
+		"祁煜": {
+			"雾海": true, "神殿": true, "深海": true, "坠浪": true, "点染": true, "斑斓": true, "心晴": true, "碧海": true, "无套装": true,
+		},
+		"秦彻": {
+			"深渊": true, "掠心": true, "锋尖": true, "戮夜": true, "无套装": true,
+		},
+		"夏以昼": {
+			"寂路": true, "远空": true, "长昼": true, "离途": true, "无套装": true,
+		},
+	}
+}
+
+func partnerIdentityMap() map[string][]string {
+	return map[string][]string{
+		"沈星回": {"暗蚀国王", "光猎", "逐光骑士", "遥远少年", "Evol特警", "深空猎人"},
+		"黎深":   {"九黎司命", "永恒先知", "极地军医", "黎明抹杀者", "临空医生"},
+		"祁煜":   {"利莫里亚海神", "潮汐之神", "深海潜行者", "画坛新锐", "海妖魅影", "艺术家"},
+		"秦彻":   {"深渊主宰", "无尽掠夺者", "异界来客"},
+		"夏以昼": {"终极兵器X-02", "远空执舰官", "深空飞行员"},
+	}
 }
