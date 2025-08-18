@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"lysk-battle-record/internal/models"
 )
 
@@ -12,12 +13,14 @@ func (s *LyskServer) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			logrus.Info("[Auth] No authorization header provided, proceeding without authentication")
 			c.Next()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			logrus.Warnf("[Auth] Invalid authorization header format: %s", authHeader)
 			c.Next()
 			return
 		}
@@ -25,10 +28,12 @@ func (s *LyskServer) AuthMiddleware() gin.HandlerFunc {
 		tokenString := parts[1]
 		userID, err := s.auth.ValidateJWT(tokenString)
 		if err != nil {
+			logrus.Warnf("[Auth] JWT validation failed: %v", err)
 			c.Next()
 			return
 		}
 
+		logrus.Infof("[Auth] Successfully authenticated user: %s", userID)
 		c.Set("userID", userID)
 		c.Next()
 	}
