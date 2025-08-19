@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -51,6 +52,17 @@ func (s *LyskServer) Login(c *gin.Context) {
 
 	token, err := s.auth.Login(req.Code)
 	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := s.auth.ValidateJWT(token)
+	if err != nil {
+		c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.createUserIfNotExist(userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -66,6 +78,24 @@ func (s *LyskServer) GetRanking(c *gin.Context) {
 	ranking := s.orbitRecordStore.GetRanking(userId.(string))
 
 	c.JSON(http.StatusOK, ranking)
+}
+
+func (s *LyskServer) createUserIfNotExist(userId string) error {
+	var user models.User
+	user.ID = userId
+
+	_, ok := s.userStore.Get(userId)
+	if ok {
+		return nil
+	}
+
+	createdUser, err := s.userSheetClient.ProcessUser(user)
+	if err != nil {
+		return fmt.Errorf("创建用户失败: %v", err)
+	}
+
+	s.userStore.Insert(*createdUser)
+	return nil
 }
 
 func (s *LyskServer) CreateUser(c *gin.Context) {
