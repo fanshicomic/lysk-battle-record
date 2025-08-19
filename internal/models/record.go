@@ -602,3 +602,25 @@ func partnerIdentityMap() map[string][]string {
 		"夏以昼": {"终极兵器X-02", "远空执舰官", "深空飞行员"},
 	}
 }
+
+func (r Record) ToStats() Stats {
+	return Stats{
+		Attack:       r.Attack,
+		HP:           r.HP,
+		Defense:      r.Defense,
+		Matching:     r.Matching,
+		MatchingBuff: r.MatchingBuff,
+		CritRate:     r.CritRate,
+		CritDmg:      r.CritDmg,
+		EnergyRegen:  r.EnergyRegen,
+		WeakenBoost:  r.WeakenBoost,
+		OathBoost:    r.OathBoost,
+		OathRegen:    r.OathRegen,
+		TotalLevel:   r.TotalLevel,
+		Partner:      r.Partner,
+		SetCard:      r.SetCard,
+		Stage:        r.Stage,
+		Weapon:       r.Weapon,
+		Buff:         r.Buff,
+	}
+}
