@@ -604,23 +604,41 @@ func partnerIdentityMap() map[string][]string {
 }
 
 func (r Record) ToStats() Stats {
+	attack, _ := strconv.Atoi(r.Attack)
+	hp, _ := strconv.Atoi(r.HP)
+	defense, _ := strconv.Atoi(r.Defense)
+	totalLevel, _ := strconv.Atoi(r.TotalLevel)
+
+	matchingBuff, _ := strconv.ParseFloat(r.MatchingBuff, 64)
+	if r.MatchingBuff == "不确定" {
+		matchingBuff = 0
+	}
+
+	critRate, _ := strconv.ParseFloat(r.CritRate, 64)
+	critDmg, _ := strconv.ParseFloat(r.CritDmg, 64)
+	energyRegen, _ := strconv.ParseFloat(r.EnergyRegen, 64)
+	weakenBoost, _ := strconv.ParseFloat(r.WeakenBoost, 64)
+	oathBoost, _ := strconv.ParseFloat(r.OathBoost, 64)
+	oathRegen, _ := strconv.ParseFloat(r.OathRegen, 64)
+	buff, _ := strconv.ParseFloat(r.Buff, 64)
+
 	return Stats{
-		Attack:       r.Attack,
-		HP:           r.HP,
-		Defense:      r.Defense,
+		Attack:       attack,
+		HP:           hp,
+		Defense:      defense,
 		Matching:     r.Matching,
-		MatchingBuff: r.MatchingBuff,
-		CritRate:     r.CritRate,
-		CritDmg:      r.CritDmg,
-		EnergyRegen:  r.EnergyRegen,
-		WeakenBoost:  r.WeakenBoost,
-		OathBoost:    r.OathBoost,
-		OathRegen:    r.OathRegen,
-		TotalLevel:   r.TotalLevel,
+		MatchingBuff: matchingBuff,
+		CritRate:     critRate,
+		CritDmg:      critDmg,
+		EnergyRegen:  energyRegen,
+		WeakenBoost:  weakenBoost,
+		OathBoost:    oathBoost,
+		OathRegen:    oathRegen,
+		TotalLevel:   totalLevel,
 		Partner:      r.Partner,
 		SetCard:      r.SetCard,
 		Stage:        r.Stage,
 		Weapon:       r.Weapon,
-		Buff:         r.Buff,
+		Buff:         buff,
 	}
 }
