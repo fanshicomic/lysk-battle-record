@@ -3,6 +3,8 @@ package usecases
 import (
 	"fmt"
 	"lysk-battle-record/internal/models"
+	"lysk-battle-record/internal/partners"
+	"lysk-battle-record/internal/set_cards"
 )
 
 type CombatPowerEstimator interface {
@@ -17,7 +19,10 @@ func NewCombatPowerEstimator() CombatPowerEstimator {
 
 func (e *combatPowerEstimator) EstimateCombatPower(record models.Record) models.CombatPower {
 	stats := record.ToStats()
-	partnerFlow := buildPartnerFlow(stats)
+	partnerFlow := getPartnerFlow(stats)
+	setCard := getSetCard(stats)
+	setCardBuff := setCard.GetSetCardBuff()[stats.Stage]
+	applySetCardBuff(&partnerFlow, setCardBuff)
 
 	score := estimate(stats, partnerFlow)
 	fmt.Println(partnerFlow)
@@ -25,12 +30,55 @@ func (e *combatPowerEstimator) EstimateCombatPower(record models.Record) models.
 	return score
 }
 
-func buildPartnerFlow(stats models.Stats) models.PartnerFlow {
+func getPartnerFlow(stats models.Stats) models.PartnerFlow {
+	var partner partners.Partner
 	switch stats.Partner {
 	case "逐光骑士":
-		return models.GetLightSeekerFlow(stats)
+		partner = partners.PartnerLightSeeker{}
+	default:
+		partner = partners.PartnerLightSeeker{}
 	}
-	return models.PartnerFlow{}
+	return partner.GetPartnerFlow(stats)
+}
+
+func getSetCard(stats models.Stats) set_cards.SetCard {
+	var setCard set_cards.SetCard
+	switch stats.SetCard {
+	case "逐光":
+		setCard = set_cards.LightSeeking{}
+	default:
+		setCard = set_cards.NoSet{}
+	}
+	return setCard
+}
+
+func applySetCardBuff(flow *models.PartnerFlow, setCardBuff models.StageBuff) {
+	for periodIdx := range flow.Periods {
+		period := &flow.Periods[periodIdx]
+		for i, skill := range period.SkillSet.Skills {
+			if allBuff, exists := setCardBuff.Buffs["所有"]; exists {
+				skill.CritRate += allBuff.CritRate
+				skill.CritDmg += allBuff.CritDmg
+				skill.WeakenBoost += allBuff.WeakenBoost
+				skill.DamageBoost += allBuff.DamageBoost
+				if allBuff.CountBonus > 1 {
+					skill.Count = int(float64(skill.Count) * allBuff.CountBonus)
+				}
+			}
+
+			if skillBuff, exists := setCardBuff.Buffs[skill.Name]; exists {
+				skill.CritRate += skillBuff.CritRate
+				skill.CritDmg += skillBuff.CritDmg
+				skill.WeakenBoost += skillBuff.WeakenBoost
+				skill.DamageBoost += skillBuff.DamageBoost
+				if skillBuff.CountBonus > 1 {
+					skill.Count = int(float64(skill.Count) * skillBuff.CountBonus)
+				}
+			}
+
+			period.SkillSet.Skills[i] = skill
+		}
+	}
 }
 
 func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatPower {

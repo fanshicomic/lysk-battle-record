@@ -12,7 +12,7 @@ func TestEstimateCombatPower(t *testing.T) {
 		Attack:       "5208",
 		HP:           "87192",
 		Defense:      "1944",
-		Matching:     "逆",
+		Matching:     "顺",
 		MatchingBuff: "20",
 		CritRate:     "13.3",
 		CritDmg:      "203.7",
@@ -24,7 +24,7 @@ func TestEstimateCombatPower(t *testing.T) {
 		Partner:      "逐光骑士",
 		SetCard:      "逐光",
 		Stage:        "IV",
-		Weapon:       "专武",
+		Weapon:       "重剑",
 		Buff:         ""}
 
 	estimator := NewCombatPowerEstimator()
