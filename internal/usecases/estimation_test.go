@@ -9,9 +9,9 @@ import (
 
 func TestEstimateCombatPower(t *testing.T) {
 	record := models.Record{
-		Attack:       "5208",
+		Attack:       "11208",
 		HP:           "87192",
-		Defense:      "1944",
+		Defense:      "4944",
 		Matching:     "顺",
 		MatchingBuff: "20",
 		CritRate:     "13.3",
@@ -23,9 +23,14 @@ func TestEstimateCombatPower(t *testing.T) {
 		TotalLevel:   "300",
 		Partner:      "逐光骑士",
 		SetCard:      "逐光",
-		Stage:        "IV",
-		Weapon:       "重剑",
-		Buff:         ""}
+		//Partner: "永恒先知",
+		//SetCard: "永恒",
+		//Partner: "深海潜行者",
+		//SetCard: "深海",
+		Stage: "IV",
+		//Weapon: "重剑",
+		Weapon: "专武",
+		Buff:   ""}
 
 	estimator := NewCombatPowerEstimator()
 	combatPower := estimator.EstimateCombatPower(record)

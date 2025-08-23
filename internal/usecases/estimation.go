@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"fmt"
+
 	"lysk-battle-record/internal/models"
 	"lysk-battle-record/internal/partners"
 	"lysk-battle-record/internal/set_cards"
@@ -34,9 +35,13 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 	var partner partners.Partner
 	switch stats.Partner {
 	case "逐光骑士":
-		partner = partners.PartnerLightSeeker{}
+		partner = partners.LightSeeker{}
+	case "永恒先知":
+		partner = partners.Foreseer{}
+	case "深海潜行者":
+		partner = partners.AbyssWalker{}
 	default:
-		partner = partners.PartnerLightSeeker{}
+		partner = partners.LightSeeker{}
 	}
 	return partner.GetPartnerFlow(stats)
 }
@@ -46,6 +51,10 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 	switch stats.SetCard {
 	case "逐光":
 		setCard = set_cards.LightSeeking{}
+	case "永恒":
+		setCard = set_cards.Forever{}
+	case "深海":
+		setCard = set_cards.DeepSea{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -106,6 +115,9 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 			}
 			nonWeakenPeriodScore := rawSkillScore * nonWeakenSkillCount
 			critRate := (stats.CritRate + skill.CritRate) / 100
+			if !skill.CanBeCrit {
+				critRate = 0
+			}
 			critDmg := (stats.CritDmg + skill.CritDmg) / 100
 			nonWeakenPeriodScore = nonWeakenPeriodScore*(1-critRate) +
 				nonWeakenPeriodScore*critRate*critDmg

@@ -42,6 +42,7 @@ type Skill struct {
 	WeakenBoost float64
 	DamageBoost float64
 	Count       int
+	CanBeCrit   bool
 }
 
 type PartnerSkillSet struct {
