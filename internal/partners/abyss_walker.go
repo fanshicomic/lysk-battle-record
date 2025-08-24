@@ -30,7 +30,7 @@ func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 		Base:       540,
 		AttackRate: 720,
 		Count:      2,
-		CritRate:   p.getExtraCritRate(),
+		CritRate:   p.getExtraCritRate(stats),
 		CanBeCrit:  true,
 	}
 	if stats.SetCard == "深海" && stats.Stage == "IV" {
@@ -77,7 +77,7 @@ func (p AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 			Base:       309,
 			AttackRate: 412,
 			Count:      energy - 8 + bonusCount,
-			CritRate:   p.getExtraCritRate(),
+			CritRate:   p.getExtraCritRate(stats),
 			CanBeCrit:  true,
 		}
 	}
@@ -92,7 +92,7 @@ func (p AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
 			Base:       144,
 			AttackRate: 192,
 			Count:      35,
-			CritRate:   p.getExtraCritRate(),
+			CritRate:   p.getExtraCritRate(stats),
 			CanBeCrit:  true,
 		}
 	}
@@ -106,7 +106,7 @@ func (p AbyssWalker) GetResonanceSkill(stats models.Stats) models.Skill {
 		Base:       785,
 		AttackRate: 1047,
 		Count:      4,
-		CritRate:   p.getExtraCritRate(),
+		CritRate:   p.getExtraCritRate(stats),
 		CanBeCrit:  true,
 	}
 
@@ -137,8 +137,13 @@ func (p AbyssWalker) GetSupportSkill() models.Skill {
 	return supportSkill
 }
 
-func (p AbyssWalker) getExtraCritRate() float64 {
+func (p AbyssWalker) getExtraCritRate(stats models.Stats) float64 {
 	// 2: 专武普攻被动参数 15*2*5/60: 潜能充满时增加15%暴击持续5秒，60秒可触发两次，平均到60秒内的增益
 	critRate := float64(2 + 15*2*5/60)
+
+	if stats.Weapon != "专武" {
+		critRate -= 2
+	}
+
 	return critRate
 }

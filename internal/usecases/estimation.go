@@ -26,8 +26,8 @@ func (e *combatPowerEstimator) EstimateCombatPower(record models.Record) models.
 	applySetCardBuff(&partnerFlow, setCardBuff)
 
 	score := estimate(stats, partnerFlow)
-	fmt.Println(partnerFlow)
-	fmt.Println(score)
+	printPartnerFlow(partnerFlow)
+	fmt.Printf("Final Score: %+v\n", score)
 	return score
 }
 
@@ -42,6 +42,8 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.AbyssWalker{}
 	case "潮汐之神":
 		partner = partners.GodOfTheTides{}
+	case "光猎":
+		partner = partners.Lumiere{}
 	default:
 		partner = partners.LightSeeker{}
 	}
@@ -59,6 +61,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.DeepSea{}
 	case "神殿":
 		setCard = set_cards.Temple{}
+	case "末夜":
+		setCard = set_cards.Midnight{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -162,4 +166,47 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 		WeakenScore:    fmt.Sprintf("%d", int(weakenScore)),
 		NonWeakenScore: fmt.Sprintf("%d", int(nonWeakenScore)),
 	}
+}
+
+func printPartnerFlow(flow models.PartnerFlow) {
+	fmt.Println("=== Partner Flow Debug ===")
+	fmt.Printf("Boost: %.1f%% | WeakenRate: %.1f%%\n", flow.Boost, flow.WeakenRate*100)
+	fmt.Println()
+
+	for periodIdx, period := range flow.Periods {
+		fmt.Printf("Period %d:\n", periodIdx+1)
+		fmt.Println("Skills:")
+
+		for _, skill := range period.SkillSet.Skills {
+			fmt.Printf("  [%s]\n", skill.Name)
+			fmt.Printf("    Base: %.0f | AttackRate: %.1f%% | Count: %d\n",
+				skill.Base, skill.AttackRate, skill.Count)
+
+			if skill.HpRate > 0 {
+				fmt.Printf("    HpRate: %.1f%%", skill.HpRate)
+			}
+			if skill.DefenseRate > 0 {
+				fmt.Printf("    DefenseRate: %.1f%%", skill.DefenseRate)
+			}
+			if skill.DamageBoost > 0 {
+				fmt.Printf("    DamageBoost: %.1f%%", skill.DamageBoost)
+			}
+			if skill.CritRate > 0 {
+				fmt.Printf("    CritRate: %.1f%%", skill.CritRate)
+			}
+			if skill.CritDmg > 0 {
+				fmt.Printf("    CritDmg: %.1f%%", skill.CritDmg)
+			}
+			if skill.WeakenBoost > 0 {
+				fmt.Printf("    WeakenBoost: %.1f%%", skill.WeakenBoost)
+			}
+			if skill.EnemyDefenceReduction > 0 {
+				fmt.Printf("    DefenceReduction: %.1f%%", skill.EnemyDefenceReduction)
+			}
+
+			fmt.Printf("    CanBeCrit: %t\n", skill.CanBeCrit)
+			fmt.Println()
+		}
+	}
+	fmt.Println("========================")
 }

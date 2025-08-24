@@ -123,6 +123,10 @@ func (p GodOfTheTides) GetPassiveSkill(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	supportSkillCount := p.GetSupportSkill().Count
 
+	if stats.Weapon != "专武" {
+		activeSkillCount = 0
+	}
+
 	passiveSkill := models.Skill{
 		Name:        "海灵",
 		Base:        47,
@@ -138,6 +142,10 @@ func (p GodOfTheTides) GetPassiveSkill(stats models.Stats) models.Skill {
 }
 
 func (p GodOfTheTides) getExtraCritRate(stats models.Stats) float64 {
+	if stats.Weapon != "专武" {
+		return 0
+	}
+
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	// 主动释放后增加30%暴击率，持续6秒
 	critRate := 30 * activeSkillCount * 6 / 60

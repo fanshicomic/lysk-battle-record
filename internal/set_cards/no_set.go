@@ -4,11 +4,11 @@ import "lysk-battle-record/internal/models"
 
 type NoSet struct{}
 
-func (n NoSet) GetName() string {
+func (c NoSet) GetName() string {
 	return "无套装"
 }
 
-func (n NoSet) GetSetCardBuff() map[string]models.StageBuff {
+func (c NoSet) GetSetCardBuff() map[string]models.StageBuff {
 	return map[string]models.StageBuff{
 		"IV": {
 			Buffs: map[string]models.SkillBuff{},

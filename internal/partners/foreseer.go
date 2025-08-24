@@ -4,17 +4,17 @@ import "lysk-battle-record/internal/models"
 
 type Foreseer struct{}
 
-func (f Foreseer) GetName() string {
+func (p Foreseer) GetName() string {
 	return "永恒先知"
 }
 
-func (f Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
-	activeSkill := f.GetActiveSkill(stats)
-	heavyAttack := f.GetHeavyAttack(stats)
-	resonanceSkill := f.GetResonanceSkill(stats)
-	oathSkill := f.GetOathSkill(stats)
-	supportSkill := f.GetSupportSkill()
-	passiveSkill := f.GetPassiveSkill(stats)
+func (p Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+	activeSkill := p.GetActiveSkill(stats)
+	heavyAttack := p.GetHeavyAttack(stats)
+	resonanceSkill := p.GetResonanceSkill(stats)
+	oathSkill := p.GetOathSkill(stats)
+	supportSkill := p.GetSupportSkill()
+	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
 
@@ -39,7 +39,7 @@ func (f Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	return flow
 }
 
-func (f Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
+func (p Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
@@ -56,7 +56,7 @@ func (f Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (f Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
 	lightAttackDamageAdjustment := 0.0
 	if stats.Stage != "IV" { // 非满阶时轻重击交替，调整伤害参数
 		lightAttackDamageAdjustment = -20.0
@@ -76,7 +76,7 @@ func (f Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (f Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
+func (p Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:        "共鸣",
 		Count:       4,
@@ -89,7 +89,7 @@ func (f Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
 	return resonanceSkill
 }
 
-func (f Foreseer) GetOathSkill(stats models.Stats) models.Skill {
+func (p Foreseer) GetOathSkill(stats models.Stats) models.Skill {
 	oathSkill := models.Skill{
 		Name:        "誓约",
 		Base:        1440,
@@ -102,7 +102,7 @@ func (f Foreseer) GetOathSkill(stats models.Stats) models.Skill {
 	return oathSkill
 }
 
-func (f Foreseer) GetSupportSkill() models.Skill {
+func (p Foreseer) GetSupportSkill() models.Skill {
 	supportSkill := models.Skill{
 		Name: "协助",
 	}
@@ -110,7 +110,7 @@ func (f Foreseer) GetSupportSkill() models.Skill {
 	return supportSkill
 }
 
-func (f Foreseer) GetPassiveSkill(stats models.Stats) models.Skill {
+func (p Foreseer) GetPassiveSkill(stats models.Stats) models.Skill {
 	passiveSkill := models.Skill{
 		Name:        "恒之罪",
 		Base:        198,
@@ -132,6 +132,10 @@ func (f Foreseer) GetPassiveSkill(stats models.Stats) models.Skill {
 
 	if stats.SetCard == "永恒" && stats.Stage == "IV" {
 		passiveSkill.Count += 10
+	}
+
+	if stats.Weapon != "专武" {
+		passiveSkill.Count -= p.GetActiveSkill(stats).Count
 	}
 
 	return passiveSkill
