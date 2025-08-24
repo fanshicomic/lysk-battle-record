@@ -46,8 +46,10 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.Lumiere{}
 	case "九黎司命":
 		partner = partners.MasterOfFate{}
+	case "无尽掠夺者":
+		partner = partners.RelentLessConqueror{}
 	default:
-		partner = partners.LightSeeker{}
+		partner = partners.DefaultPartner{}
 	}
 	return partner.GetPartnerFlow(stats)
 }
@@ -67,6 +69,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Midnight{}
 	case "拥雪":
 		setCard = set_cards.SnowFall{}
+	case "掠心":
+		setCard = set_cards.Captivating{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -159,9 +163,9 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 	matchingBuff := 1 + stats.MatchingBuff/100
 	championshipsBuff := 1 + stats.Buff/100
 
-	total *= 1 + partnerFlow.Boost/100
-	weakenScore *= 1 + partnerFlow.Boost/100
-	nonWeakenScore *= 1 + partnerFlow.Boost/100
+	total *= 1 + partnerFlow.Boost/100.0
+	weakenScore *= 1 + partnerFlow.Boost/100.0
+	nonWeakenScore *= 1 + partnerFlow.Boost/100.0
 	buffedTotal := int(total * matchingBuff * championshipsBuff)
 
 	return models.CombatPower{

@@ -122,7 +122,7 @@ func (p Lumiere) GetPassiveSkill(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	heavyAttackCount := p.GetHeavyAttack(stats).Count
 	supportSkillCount := p.GetSupportSkill().Count
-	partnerCount := 26
+	partnerCount := 26 // tested
 
 	if stats.Weapon != "专武" {
 		activeSkillCount = 0
@@ -130,10 +130,10 @@ func (p Lumiere) GetPassiveSkill(stats models.Stats) models.Skill {
 
 	count := partnerCount + activeSkillCount + supportSkillCount + heavyAttackCount/4 + 4 // last 4 is from 共鸣
 	if stats.SetCard == "末夜" && stats.Stage == "IV" {
-		count = partnerCount*(60-4*8)/60 + (partnerCount*8*4/60)*4 + // 非朦胧期 + 朦胧期
-			activeSkillCount*(60-4*8)/60 + (activeSkillCount*8*4/60)*4 + // 非朦胧期 + 朦胧期
-			supportSkillCount +
-			heavyAttackCount/4 +
+		count = partnerCount*(60.0-4.0*8.0)/60.0 + (partnerCount*8.0*4.0/60.0)*4 + // 非朦胧期 + 朦胧期
+			activeSkillCount*(60.0-4.0*8.0)/60.0 + (activeSkillCount*8.0*4.0/60.0)*4 + // 非朦胧期 + 朦胧期
+			//supportSkillCount +
+			(heavyAttackCount/4)*(60.0-4.0*8.0)/60.0 +
 			4
 	}
 	passiveSkill := models.Skill{
@@ -146,5 +146,4 @@ func (p Lumiere) GetPassiveSkill(stats models.Stats) models.Skill {
 	}
 
 	return passiveSkill
-
 }

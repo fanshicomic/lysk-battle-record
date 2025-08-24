@@ -13,7 +13,7 @@ func TestEstimateCombatPower(t *testing.T) {
 		//Attack:       "7900",
 		HP:           "210000",
 		Defense:      "5045",
-		Matching:     "逆",
+		Matching:     "顺",
 		MatchingBuff: "20",
 		CritRate:     "65",
 		CritDmg:      "300",
@@ -30,12 +30,14 @@ func TestEstimateCombatPower(t *testing.T) {
 		//SetCard: "神殿",
 		//Partner: "光猎",
 		//SetCard: "末夜",
-		Partner: "九黎司命",
-		SetCard: "拥雪",
+		//Partner: "九黎司命",
+		//SetCard: "拥雪",
+		Partner: "无尽掠夺者",
+		SetCard: "掠心",
 		Stage:   "IV",
-		//Weapon:  "重剑",
-		Weapon: "专武",
-		Buff:   ""}
+		Weapon:  "重剑",
+		//Weapon: "专武",
+		Buff: ""}
 
 	estimator := NewCombatPowerEstimator()
 	combatPower := estimator.EstimateCombatPower(record)

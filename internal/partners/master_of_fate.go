@@ -15,6 +15,7 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill()
 	passiveSkill := p.GetPassiveSkill(stats)
+	altPassiveSkill := p.GetAltResonanceSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
 	if stats.SetCard == "拥雪" && stats.Stage != "I" {
@@ -32,11 +33,11 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						oathSkill,
 						supportSkill,
 						passiveSkill,
+						altPassiveSkill,
 					},
 				},
 			},
 		},
-		Boost:      21, // 溯光力场内10%攻击增益+破盾后增伤20%
 		WeakenRate: weakenRate,
 	}
 
@@ -115,11 +116,12 @@ func (p MasterOfFate) GetPassiveSkill(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	supportSkillCount := p.GetSupportSkill().Count
 	altResonanceSkillCount := p.GetAltResonanceSkill(stats).Count
+	partnerCount := 5
 	passiveSkill := models.Skill{
 		Name:       "断玉诀",
 		Base:       233,
 		AttackRate: 310,
-		Count:      (activeSkillCount*4+supportSkillCount+altResonanceSkillCount)/3 + 6, // 6 from normal attacks
+		Count:      (activeSkillCount*4+supportSkillCount+altResonanceSkillCount)/3.0 + partnerCount + 6, // 6 from normal attacks
 		CanBeCrit:  true,
 	}
 

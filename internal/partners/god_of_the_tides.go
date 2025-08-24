@@ -1,6 +1,7 @@
 package partners
 
 import (
+	"fmt"
 	"lysk-battle-record/internal/models"
 	"math"
 )
@@ -133,10 +134,12 @@ func (p GodOfTheTides) GetPassiveSkill(stats models.Stats) models.Skill {
 		AttackRate:  25,
 		HpRate:      2.2,
 		Count:       (activeSkillCount + supportSkillCount) * singleTimeCount,
-		DamageBoost: ((float64(p.GetRainCount(stats))/6)*1.25 + 5/6) / 6, // 下雨期间海灵升级增益
+		DamageBoost: ((float64(p.GetRainCount(stats))/6.0)*1.25 + 5.0/6.0) * 100 / 6.0, // 下雨期间海灵升级增益
 		CritRate:    p.getExtraCritRate(stats),
 		CanBeCrit:   true,
 	}
+
+	fmt.Println(passiveSkill.DamageBoost)
 
 	return passiveSkill
 }

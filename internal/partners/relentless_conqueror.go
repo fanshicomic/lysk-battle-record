@@ -2,13 +2,13 @@ package partners
 
 import "lysk-battle-record/internal/models"
 
-type LightSeeker struct{}
+type RelentLessConqueror struct{}
 
-func (p LightSeeker) GetName() string {
-	return "逐光骑士"
+func (p RelentLessConqueror) GetName() string {
+	return "无尽掠夺者"
 }
 
-func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -17,6 +17,10 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
+	boost := (4.0 * 8.0 / 60.0) * 80.0
+	if stats.SetCard == "掠心" && stats.Stage != "I" {
+		boost = 80
+	}
 
 	flow := models.PartnerFlow{
 		Periods: []models.PartnerPeriod{
@@ -33,36 +37,37 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 				},
 			},
 		},
-		Boost:      25, // 溯光力场内10%攻击增益+破盾后增伤20%
 		WeakenRate: weakenRate,
+		Boost:      boost,
 	}
 
 	return flow
 }
 
-func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
+func (p RelentLessConqueror) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
 		return models.Skill{
-			Name:       "主动",
-			Base:       341,
-			AttackRate: 455,
-			Count:      (energy - 8) * 2,
-			CanBeCrit:  true,
+			Name:        "主动",
+			Base:        342,
+			AttackRate:  456,
+			Count:       energy - 8,
+			DamageBoost: 10.0 / (10.0 - 6.0*0.5),
+			CanBeCrit:   true,
 		}
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p RelentLessConqueror) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		return models.Skill{
 			Name:       "重击",
-			Base:       118,
-			AttackRate: 157,
-			Count:      30,
+			Base:       160,
+			AttackRate: 213,
+			Count:      20,
 			CanBeCrit:  true,
 		}
 	}
@@ -70,11 +75,11 @@ func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
+func (p RelentLessConqueror) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:       "共鸣",
-		Base:       641,
-		AttackRate: 854,
+		Base:       1094,
+		AttackRate: 1458,
 		Count:      4,
 		CanBeCrit:  true,
 	}
@@ -82,7 +87,7 @@ func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
 	return resonanceSkill
 }
 
-func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
+func (p RelentLessConqueror) GetOathSkill(stats models.Stats) models.Skill {
 	oathSkill := models.Skill{
 		Name:        "誓约",
 		Base:        1440,
@@ -94,11 +99,11 @@ func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
 	return oathSkill
 }
 
-func (p LightSeeker) GetSupportSkill() models.Skill {
+func (p RelentLessConqueror) GetSupportSkill() models.Skill {
 	supportSkill := models.Skill{
 		Name:       "协助",
-		Base:       400,
-		AttackRate: 400,
+		Base:       239,
+		AttackRate: 318,
 		Count:      6,
 		CanBeCrit:  true,
 	}
@@ -106,14 +111,17 @@ func (p LightSeeker) GetSupportSkill() models.Skill {
 	return supportSkill
 }
 
-func (p LightSeeker) GetPassiveSkill(stats models.Stats) models.Skill {
-	activeSKillCount := p.GetActiveSkill(stats).Count
+func (p RelentLessConqueror) GetPassiveSkill(stats models.Stats) models.Skill {
 	skill := models.Skill{
-		Name:       "溯光共鸣",
-		Base:       150,
-		AttackRate: 200,
-		Count:      int(float64(activeSKillCount) * 0.8),
+		Name:       "掠噬标记",
+		Base:       60,
+		AttackRate: 80,
+		Count:      60 * 2 / 8,
 		CanBeCrit:  true,
+	}
+
+	if stats.SetCard != "掠心" || stats.Stage != "IV" {
+		skill.Count = 0
 	}
 
 	return skill
