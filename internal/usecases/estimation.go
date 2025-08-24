@@ -44,6 +44,8 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.GodOfTheTides{}
 	case "光猎":
 		partner = partners.Lumiere{}
+	case "九黎司命":
+		partner = partners.MasterOfFate{}
 	default:
 		partner = partners.LightSeeker{}
 	}
@@ -63,6 +65,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Temple{}
 	case "末夜":
 		setCard = set_cards.Midnight{}
+	case "拥雪":
+		setCard = set_cards.SnowFall{}
 	default:
 		setCard = set_cards.NoSet{}
 	}

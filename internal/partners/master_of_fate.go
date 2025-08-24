@@ -2,13 +2,13 @@ package partners
 
 import "lysk-battle-record/internal/models"
 
-type LightSeeker struct{}
+type MasterOfFate struct{}
 
-func (p LightSeeker) GetName() string {
-	return "逐光骑士"
+func (p MasterOfFate) GetName() string {
+	return "九黎司命"
 }
 
-func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -17,6 +17,9 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
+	if stats.SetCard == "拥雪" && stats.Stage != "I" {
+		weakenRate *= 1.2
+	}
 
 	flow := models.PartnerFlow{
 		Periods: []models.PartnerPeriod{
@@ -40,15 +43,17 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	return flow
 }
 
-func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
+func (p MasterOfFate) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
-
+	if stats.SetCard == "拥雪" && (stats.Stage == "III" || stats.Stage == "IV") {
+		energy += 2
+	}
 	if stats.Weapon == "专武" {
 		return models.Skill{
 			Name:       "主动",
-			Base:       341,
-			AttackRate: 455,
-			Count:      (energy - 8) * 2,
+			Base:       404,
+			AttackRate: 539,
+			Count:      energy - 8,
 			CanBeCrit:  true,
 		}
 	}
@@ -56,12 +61,12 @@ func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p MasterOfFate) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		return models.Skill{
 			Name:       "重击",
-			Base:       118,
-			AttackRate: 157,
+			Base:       141,
+			AttackRate: 188,
 			Count:      30,
 			CanBeCrit:  true,
 		}
@@ -70,11 +75,11 @@ func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
+func (p MasterOfFate) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:       "共鸣",
-		Base:       641,
-		AttackRate: 854,
+		Base:       632,
+		AttackRate: 842,
 		Count:      4,
 		CanBeCrit:  true,
 	}
@@ -82,7 +87,7 @@ func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
 	return resonanceSkill
 }
 
-func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
+func (p MasterOfFate) GetOathSkill(stats models.Stats) models.Skill {
 	oathSkill := models.Skill{
 		Name:        "誓约",
 		Base:        1440,
@@ -94,11 +99,11 @@ func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
 	return oathSkill
 }
 
-func (p LightSeeker) GetSupportSkill() models.Skill {
+func (p MasterOfFate) GetSupportSkill() models.Skill {
 	supportSkill := models.Skill{
 		Name:       "协助",
-		Base:       400,
-		AttackRate: 400,
+		Base:       260,
+		AttackRate: 348,
 		Count:      6,
 		CanBeCrit:  true,
 	}
@@ -106,14 +111,32 @@ func (p LightSeeker) GetSupportSkill() models.Skill {
 	return supportSkill
 }
 
-func (p LightSeeker) GetPassiveSkill(stats models.Stats) models.Skill {
-	activeSKillCount := p.GetActiveSkill(stats).Count
-	skill := models.Skill{
-		Name:       "溯光共鸣",
-		Base:       150,
-		AttackRate: 200,
-		Count:      int(float64(activeSKillCount) * 0.8),
+func (p MasterOfFate) GetPassiveSkill(stats models.Stats) models.Skill {
+	activeSkillCount := p.GetActiveSkill(stats).Count
+	supportSkillCount := p.GetSupportSkill().Count
+	altResonanceSkillCount := p.GetAltResonanceSkill(stats).Count
+	passiveSkill := models.Skill{
+		Name:       "断玉诀",
+		Base:       233,
+		AttackRate: 310,
+		Count:      (activeSkillCount*4+supportSkillCount+altResonanceSkillCount)/3 + 6, // 6 from normal attacks
 		CanBeCrit:  true,
+	}
+
+	return passiveSkill
+}
+
+func (p MasterOfFate) GetAltResonanceSkill(stats models.Stats) models.Skill {
+	skill := models.Skill{
+		Name:       "穿雨",
+		Base:       205,
+		AttackRate: 273,
+		Count:      3 * 4,
+		CanBeCrit:  true,
+	}
+
+	if stats.Weapon != "专武" {
+		skill.Count = 0
 	}
 
 	return skill

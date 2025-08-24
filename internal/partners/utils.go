@@ -1,6 +1,9 @@
 package partners
 
-import "lysk-battle-record/internal/models"
+import (
+	"lysk-battle-record/internal/models"
+	"math"
+)
 
 func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 	activeSkill := models.Skill{
@@ -13,7 +16,8 @@ func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 		activeSkill.Name = "重剑主动"
 		activeSkill.Base = 621
 		activeSkill.AttackRate = 829
-		activeSkill.DamageBoost = 150
+		activeSkill.DamageBoost = 50
+		activeSkill.Count = int(math.Min(float64(energy-8), 5))
 	case "单手剑":
 		activeSkill.Name = "单手剑主动"
 		activeSkill.Base = 341
@@ -41,7 +45,7 @@ func getHeavyAttackForWeapon(weapon string) models.Skill {
 	case "重剑":
 		heavyAttack.Base = 337
 		heavyAttack.AttackRate = 449
-		heavyAttack.DamageBoost = 112.9
+		heavyAttack.DamageBoost = 12.9
 		heavyAttack.Count = 10
 	case "单手剑":
 		heavyAttack.Base = 250

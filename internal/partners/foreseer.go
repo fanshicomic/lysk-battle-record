@@ -95,7 +95,7 @@ func (p Foreseer) GetOathSkill(stats models.Stats) models.Skill {
 		Base:        1440,
 		AttackRate:  780,
 		DefenseRate: 3060,
-		DamageBoost: stats.OathBoost * 100,
+		DamageBoost: stats.OathBoost,
 		Count:       getOathCount(stats),
 	}
 

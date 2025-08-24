@@ -118,7 +118,7 @@ func (p AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
 		Name:        "誓约",
 		Base:        1440,
 		AttackRate:  1920,
-		DamageBoost: stats.OathBoost * 100,
+		DamageBoost: stats.OathBoost,
 		Count:       getOathCount(stats),
 	}
 

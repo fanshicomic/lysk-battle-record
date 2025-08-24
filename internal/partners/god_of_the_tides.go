@@ -102,7 +102,7 @@ func (p GodOfTheTides) GetOathSkill(stats models.Stats) models.Skill {
 		Base:        1440,
 		AttackRate:  780,
 		HpRate:      69.4,
-		DamageBoost: stats.OathBoost * 100,
+		DamageBoost: stats.OathBoost,
 		Count:       getOathCount(stats),
 	}
 

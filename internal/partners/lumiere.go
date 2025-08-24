@@ -57,7 +57,7 @@ func (p Lumiere) GetActiveSkill(stats models.Stats) models.Skill {
 
 	if stats.SetCard == "末夜" {
 		if stats.Stage == "III" || stats.Stage == "IV" {
-			skill.Count += 3
+			skill.Count += 6
 		}
 
 		if stats.Stage == "IV" {
@@ -102,7 +102,7 @@ func (p Lumiere) GetOathSkill(stats models.Stats) models.Skill {
 		Base:        1440,
 		AttackRate:  780,
 		DefenseRate: 3060,
-		DamageBoost: stats.OathBoost * 100,
+		DamageBoost: stats.OathBoost,
 		Count:       getOathCount(stats),
 	}
 
@@ -130,10 +130,10 @@ func (p Lumiere) GetPassiveSkill(stats models.Stats) models.Skill {
 
 	count := partnerCount + activeSkillCount + supportSkillCount + heavyAttackCount/4 + 4 // last 4 is from 共鸣
 	if stats.SetCard == "末夜" && stats.Stage == "IV" {
-		count = partnerCount + (8 * 4 / 60) +
-			activeSkillCount + activeSkillCount*(8*4/60)*4 +
+		count = partnerCount*(60-4*8)/60 + (partnerCount*8*4/60)*4 + // 非朦胧期 + 朦胧期
+			activeSkillCount*(60-4*8)/60 + (activeSkillCount*8*4/60)*4 + // 非朦胧期 + 朦胧期
 			supportSkillCount +
-			heavyAttackCount/4 + 3*4 + // last 3 * 4 is heavy attack during 朦胧 period
+			heavyAttackCount/4 +
 			4
 	}
 	passiveSkill := models.Skill{
