@@ -32,17 +32,18 @@ type Stats struct {
 }
 
 type Skill struct {
-	Name        string
-	Base        float64
-	HpRate      float64
-	AttackRate  float64
-	DefenseRate float64
-	CritRate    float64
-	CritDmg     float64
-	WeakenBoost float64
-	DamageBoost float64
-	Count       int
-	CanBeCrit   bool
+	Name                  string
+	Base                  float64
+	HpRate                float64
+	AttackRate            float64
+	DefenseRate           float64
+	CritRate              float64
+	CritDmg               float64
+	WeakenBoost           float64
+	DamageBoost           float64
+	EnemyDefenceReduction float64
+	Count                 int
+	CanBeCrit             bool
 }
 
 type PartnerSkillSet struct {

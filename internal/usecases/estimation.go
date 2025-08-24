@@ -105,7 +105,7 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 			rawSkillScore *= 1 + skill.DamageBoost/100
 
 			// consider level - defence relationship
-			levelDefenseRatio := 1 + float64(stats.TotalLevel)/(float64(stats.TotalLevel)+300+(80*3+100)*(1-skill.DefenseRate/100))
+			levelDefenseRatio := 1 + float64(stats.TotalLevel)/(float64(stats.TotalLevel)+300+(80*3+100)*(1-skill.EnemyDefenceReduction/100))
 			rawSkillScore *= levelDefenseRatio
 
 			// consider non-weaken period
