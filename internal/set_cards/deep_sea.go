@@ -5,7 +5,7 @@ import "lysk-battle-record/internal/models"
 type DeepSea struct{}
 
 func (c DeepSea) GetName() string {
-	return "永恒"
+	return "深海"
 }
 
 func (c DeepSea) GetSetCardBuff() map[string]models.StageBuff {

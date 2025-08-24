@@ -4,16 +4,16 @@ import "lysk-battle-record/internal/models"
 
 type AbyssWalker struct{}
 
-func (a AbyssWalker) GetName() string {
+func (p AbyssWalker) GetName() string {
 	return "深海潜行者"
 }
 
-func (a AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
-	activeSkill := a.GetActiveSkill(stats)
-	heavyAttack := a.GetHeavyAttack(stats)
-	resonanceSkill := a.GetResonanceSkill()
-	oathSkill := a.GetOathSkill(stats)
-	supportSkill := a.GetSupportSkill()
+func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+	activeSkill := p.GetActiveSkill(stats)
+	heavyAttack := p.GetHeavyAttack(stats)
+	resonanceSkill := p.GetResonanceSkill(stats)
+	oathSkill := p.GetOathSkill(stats)
+	supportSkill := p.GetSupportSkill()
 
 	passiveSkillBurn := models.Skill{
 		Name:       "灼烧",
@@ -30,7 +30,7 @@ func (a AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 		Base:       540,
 		AttackRate: 720,
 		Count:      2,
-		CritRate:   a.getExtraCritRate(),
+		CritRate:   p.getExtraCritRate(),
 		CanBeCrit:  true,
 	}
 	if stats.SetCard == "深海" && stats.Stage == "IV" {
@@ -63,7 +63,7 @@ func (a AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	return flow
 }
 
-func (a AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
+func (p AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
@@ -77,7 +77,7 @@ func (a AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 			Base:       309,
 			AttackRate: 412,
 			Count:      energy - 8 + bonusCount,
-			CritRate:   a.getExtraCritRate(),
+			CritRate:   p.getExtraCritRate(),
 			CanBeCrit:  true,
 		}
 	}
@@ -85,14 +85,14 @@ func (a AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (a AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		return models.Skill{
 			Name:       "重击",
 			Base:       144,
 			AttackRate: 192,
 			Count:      35,
-			CritRate:   a.getExtraCritRate(),
+			CritRate:   p.getExtraCritRate(),
 			CanBeCrit:  true,
 		}
 	}
@@ -100,20 +100,20 @@ func (a AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (a AbyssWalker) GetResonanceSkill() models.Skill {
+func (p AbyssWalker) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:       "共鸣",
 		Base:       785,
 		AttackRate: 1047,
 		Count:      4,
-		CritRate:   a.getExtraCritRate(),
+		CritRate:   p.getExtraCritRate(),
 		CanBeCrit:  true,
 	}
 
 	return resonanceSkill
 }
 
-func (a AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
+func (p AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
 	oathSkill := models.Skill{
 		Name:        "誓约",
 		Base:        1440,
@@ -125,7 +125,7 @@ func (a AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
 	return oathSkill
 }
 
-func (a AbyssWalker) GetSupportSkill() models.Skill {
+func (p AbyssWalker) GetSupportSkill() models.Skill {
 	supportSkill := models.Skill{
 		Name:       "协助",
 		Base:       264,
@@ -137,7 +137,7 @@ func (a AbyssWalker) GetSupportSkill() models.Skill {
 	return supportSkill
 }
 
-func (a AbyssWalker) getExtraCritRate() float64 {
+func (p AbyssWalker) getExtraCritRate() float64 {
 	// 2: 专武普攻被动参数 15*2*5/60: 潜能充满时增加15%暴击持续5秒，60秒可触发两次，平均到60秒内的增益
 	critRate := float64(2 + 15*2*5/60)
 	return critRate

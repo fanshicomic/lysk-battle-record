@@ -40,6 +40,8 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.Foreseer{}
 	case "深海潜行者":
 		partner = partners.AbyssWalker{}
+	case "潮汐之神":
+		partner = partners.GodOfTheTides{}
 	default:
 		partner = partners.LightSeeker{}
 	}
@@ -55,6 +57,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Forever{}
 	case "深海":
 		setCard = set_cards.DeepSea{}
+	case "神殿":
+		setCard = set_cards.Temple{}
 	default:
 		setCard = set_cards.NoSet{}
 	}

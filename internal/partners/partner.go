@@ -10,6 +10,6 @@ type Partner interface {
 	GetActiveSkill(stats models.Stats) models.Skill
 	GetHeavyAttack(stats models.Stats) models.Skill
 	GetOathSkill(stats models.Stats) models.Skill
-	GetResonanceSkill() models.Skill
+	GetResonanceSkill(stats models.Stats) models.Skill
 	GetSupportSkill() models.Skill
 }

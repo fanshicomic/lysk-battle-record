@@ -11,7 +11,7 @@ func (p LightSeeker) GetName() string {
 func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetHeavyAttack(stats)
-	resonanceSkill := p.GetResonanceSkill()
+	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill()
 
@@ -77,7 +77,7 @@ func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (p LightSeeker) GetResonanceSkill() models.Skill {
+func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:       "共鸣",
 		Base:       641,

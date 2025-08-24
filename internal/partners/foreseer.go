@@ -11,7 +11,7 @@ func (f Foreseer) GetName() string {
 func (f Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := f.GetActiveSkill(stats)
 	heavyAttack := f.GetHeavyAttack(stats)
-	resonanceSkill := f.GetResonanceSkill()
+	resonanceSkill := f.GetResonanceSkill(stats)
 	oathSkill := f.GetOathSkill(stats)
 	supportSkill := f.GetSupportSkill()
 	passiveSkill := f.GetPassiveSkill(stats)
@@ -76,7 +76,7 @@ func (f Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
-func (f Foreseer) GetResonanceSkill() models.Skill {
+func (f Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
 	resonanceSkill := models.Skill{
 		Name:        "共鸣",
 		Count:       4,
