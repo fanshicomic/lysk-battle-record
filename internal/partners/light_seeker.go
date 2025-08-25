@@ -13,7 +13,7 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -31,10 +31,10 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		Boost:      25, // 溯光力场内10%攻击增益+破盾后增伤20%
-		WeakenRate: weakenRate,
+		Boost: 25, // 溯光力场内10%攻击增益+破盾后增伤20%
 	}
 
 	return flow
@@ -44,13 +44,11 @@ func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "主动",
-			Base:       341,
-			AttackRate: 455,
-			Count:      (energy - 8) * 2,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 341
+		skill.AttackRate = 455
+		skill.Count = (energy - 8) * 2
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -58,52 +56,38 @@ func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "重击",
-			Base:       118,
-			AttackRate: 157,
-			Count:      30,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 118
+		skill.AttackRate = 157
+		skill.Count = 30
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:       "共鸣",
-		Base:       641,
-		AttackRate: 854,
-		Count:      4,
-		CanBeCrit:  true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 641
+	skill.AttackRate = 854
+	return skill
 }
 
 func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  1920,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 1920
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p LightSeeker) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:       "协助",
-		Base:       400,
-		AttackRate: 400,
-		Count:      6,
-		CanBeCrit:  true,
-	}
-
-	return supportSkill
+func (p LightSeeker) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Base = 400
+	skill.AttackRate = 400
+	skill.Count = 6
+	return skill
 }
 
 func (p LightSeeker) GetPassiveSkill(stats models.Stats) models.Skill {

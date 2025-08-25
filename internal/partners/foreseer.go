@@ -13,7 +13,7 @@ func (p Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -31,9 +31,9 @@ func (p Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		WeakenRate: weakenRate,
 	}
 
 	return flow
@@ -43,71 +43,56 @@ func (p Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:        "主动",
-			Base:        52,
-			AttackRate:  28,
-			DefenseRate: 111,
-			Count:       (energy - 8) * 6,
-			CanBeCrit:   true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 52
+		skill.AttackRate = 28
+		skill.DefenseRate = 111
+		skill.Count = (energy - 8) * 6
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
 func (p Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
-	lightAttackDamageAdjustment := 0.0
-	if stats.Stage != "IV" { // 非满阶时轻重击交替，调整伤害参数
-		lightAttackDamageAdjustment = -20.0
-	}
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:        "重击",
-			Base:        167,
-			AttackRate:  89,
-			DefenseRate: 353,
-			Count:       25,
-			DamageBoost: lightAttackDamageAdjustment,
-			CanBeCrit:   true,
+		lightAttackDamageAdjustment := 0.0
+		if stats.Stage != "IV" {
+			lightAttackDamageAdjustment = -20.0
 		}
+
+		skill := getDefaultHeavyAttack()
+		skill.Base = 167
+		skill.AttackRate = 89
+		skill.DefenseRate = 353
+		skill.Count = 25
+		skill.DamageBoost = lightAttackDamageAdjustment
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:        "共鸣",
-		Count:       4,
-		Base:        790,
-		AttackRate:  421,
-		DefenseRate: 1670,
-		CanBeCrit:   true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 790
+	skill.AttackRate = 421
+	skill.DefenseRate = 1670
+	return skill
 }
 
 func (p Foreseer) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  780,
-		DefenseRate: 3060,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 780
+	skill.DefenseRate = 3060
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p Foreseer) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name: "协助",
-	}
-
-	return supportSkill
+func (p Foreseer) GetSupportSkill(stats models.Stats) models.Skill {
+	return getDefaultSupportSkill()
 }
 
 func (p Foreseer) GetPassiveSkill(stats models.Stats) models.Skill {

@@ -13,7 +13,7 @@ func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -30,22 +30,18 @@ func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		WeakenRate: weakenRate,
 	}
 }
 
 func (p DefaultPartner) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "主动",
-			Base:       309,
-			AttackRate: 412,
-			Count:      energy - 8,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Count = energy - 8
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -53,43 +49,27 @@ func (p DefaultPartner) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p DefaultPartner) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:      "重击",
-			CanBeCrit: true,
-		}
+		return getDefaultHeavyAttack()
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p DefaultPartner) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
 func (p DefaultPartner) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:      "共鸣",
-		Count:     4,
-		CanBeCrit: true,
-	}
-
-	return resonanceSkill
+	return getDefaultResonanceSkill()
 }
 
-func (p DefaultPartner) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:      "协助",
-		Count:     6,
-		CanBeCrit: true,
-	}
-
-	return supportSkill
+func (p DefaultPartner) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Count = 6
+	return skill
 }
 
 func (p DefaultPartner) GetPassiveSkill(stats models.Stats) models.Skill {

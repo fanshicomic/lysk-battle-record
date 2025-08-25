@@ -13,7 +13,7 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 	altPassiveSkill := p.GetAltResonanceSkill(stats)
 
@@ -36,9 +36,9 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						altPassiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		WeakenRate: weakenRate,
 	}
 
 	return flow
@@ -50,13 +50,11 @@ func (p MasterOfFate) GetActiveSkill(stats models.Stats) models.Skill {
 		energy += 2
 	}
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "主动",
-			Base:       404,
-			AttackRate: 539,
-			Count:      energy - 8,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 404
+		skill.AttackRate = 539
+		skill.Count = energy - 8
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -64,57 +62,43 @@ func (p MasterOfFate) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p MasterOfFate) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "重击",
-			Base:       141,
-			AttackRate: 188,
-			Count:      30,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 141
+		skill.AttackRate = 188
+		skill.Count = 30
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p MasterOfFate) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:       "共鸣",
-		Base:       632,
-		AttackRate: 842,
-		Count:      4,
-		CanBeCrit:  true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 632
+	skill.AttackRate = 842
+	return skill
 }
 
 func (p MasterOfFate) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  1920,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 1920
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p MasterOfFate) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:       "协助",
-		Base:       260,
-		AttackRate: 348,
-		Count:      6,
-		CanBeCrit:  true,
-	}
-
-	return supportSkill
+func (p MasterOfFate) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Base = 260
+	skill.AttackRate = 348
+	skill.Count = 6
+	return skill
 }
 
 func (p MasterOfFate) GetPassiveSkill(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
-	supportSkillCount := p.GetSupportSkill().Count
+	supportSkillCount := p.GetSupportSkill(stats).Count
 	altResonanceSkillCount := p.GetAltResonanceSkill(stats).Count
 	partnerCount := 5
 	passiveSkill := models.Skill{

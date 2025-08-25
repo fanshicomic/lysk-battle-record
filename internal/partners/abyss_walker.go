@@ -13,7 +13,7 @@ func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 
 	passiveSkillBurn := models.Skill{
 		Name:       "灼烧",
@@ -53,11 +53,11 @@ func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkillSlash,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
 		// 4*0.8: 潜能回复时的攻击增益参数
-		Boost:      8 * 0.7,
-		WeakenRate: weakenRate,
+		Boost: 8 * 0.7,
 	}
 
 	return flow
@@ -72,14 +72,12 @@ func (p AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 			bonusCount = 2
 		}
 
-		return models.Skill{
-			Name:       "主动",
-			Base:       309,
-			AttackRate: 412,
-			Count:      energy - 8 + bonusCount,
-			CritRate:   p.getExtraCritRate(stats),
-			CanBeCrit:  true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 309
+		skill.AttackRate = 412
+		skill.Count = energy - 8 + bonusCount
+		skill.CritRate = p.getExtraCritRate(stats)
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -87,54 +85,40 @@ func (p AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "重击",
-			Base:       144,
-			AttackRate: 192,
-			Count:      35,
-			CritRate:   p.getExtraCritRate(stats),
-			CanBeCrit:  true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 144
+		skill.AttackRate = 192
+		skill.Count = 35
+		skill.CritRate = p.getExtraCritRate(stats)
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p AbyssWalker) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:       "共鸣",
-		Base:       785,
-		AttackRate: 1047,
-		Count:      4,
-		CritRate:   p.getExtraCritRate(stats),
-		CanBeCrit:  true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 785
+	skill.AttackRate = 1047
+	skill.CritRate = p.getExtraCritRate(stats)
+	return skill
 }
 
 func (p AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  1920,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 1920
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p AbyssWalker) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:       "协助",
-		Base:       264,
-		AttackRate: 352,
-		Count:      4,
-		CanBeCrit:  true,
-	}
-
-	return supportSkill
+func (p AbyssWalker) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Base = 264
+	skill.AttackRate = 352
+	skill.Count = 4
+	return skill
 }
 
 func (p AbyssWalker) getExtraCritRate(stats models.Stats) float64 {

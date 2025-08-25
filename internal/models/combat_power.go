@@ -44,6 +44,7 @@ type Skill struct {
 	EnemyDefenceReduction float64
 	Count                 int
 	CanBeCrit             bool
+	NoWeakenPeriod        bool
 }
 
 type PartnerSkillSet struct {
@@ -51,13 +52,13 @@ type PartnerSkillSet struct {
 }
 
 type PartnerPeriod struct {
-	SkillSet PartnerSkillSet
+	SkillSet   PartnerSkillSet
+	WeakenRate float64
 }
 
 type PartnerFlow struct {
-	Periods    []PartnerPeriod
-	WeakenRate float64
-	Boost      float64
+	Periods []PartnerPeriod
+	Boost   float64
 }
 
 type SkillBuff struct {

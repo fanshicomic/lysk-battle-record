@@ -48,8 +48,10 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.MasterOfFate{}
 	case "无尽掠夺者":
 		partner = partners.RelentLessConqueror{}
+	case "深渊主宰":
+		partner = partners.AbysmSovereign{}
 	default:
-		partner = partners.DefaultPartner{}
+		partner = partners.AbysmSovereign{}
 	}
 	return partner.GetPartnerFlow(stats)
 }
@@ -71,6 +73,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.SnowFall{}
 	case "掠心":
 		setCard = set_cards.Captivating{}
+	case "深渊":
+		setCard = set_cards.Abyssal{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -125,10 +129,15 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 			rawSkillScore *= levelDefenseRatio
 
 			// consider non-weaken period
-			nonWeakenSkillCount := (1 - partnerFlow.WeakenRate) * float64(skill.Count)
-			if skill.Name == "誓约" { // 誓约只在虚弱期放，X-02誓约技会算作特殊技能
-				nonWeakenSkillCount = 0
+			weakenRate := period.WeakenRate
+			if skill.NoWeakenPeriod {
+				weakenRate = 0
 			}
+
+			if skill.Name == "誓约" {
+				weakenRate = 1
+			}
+			nonWeakenSkillCount := (1 - weakenRate) * float64(skill.Count)
 			nonWeakenPeriodScore := rawSkillScore * nonWeakenSkillCount
 			critRate := (stats.CritRate + skill.CritRate) / 100
 			if !skill.CanBeCrit {
@@ -139,9 +148,13 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 				nonWeakenPeriodScore*critRate*critDmg
 
 			// consider weaken period
-			weakenSkillCount := partnerFlow.WeakenRate * float64(skill.Count)
+			weakenSkillCount := weakenRate * float64(skill.Count)
 			if skill.Name == "共鸣" { // 共鸣技不会进入虚弱期
 				weakenSkillCount = 0
+			}
+
+			if skill.Name == "誓约" {
+				weakenSkillCount = 1
 			}
 			weakenPeriodScore := rawSkillScore * weakenSkillCount
 			weakenBoost := stats.WeakenBoost + skill.WeakenBoost
@@ -160,8 +173,8 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 		total += score
 	}
 
-	matchingBuff := 1 + stats.MatchingBuff/100
-	championshipsBuff := 1 + stats.Buff/100
+	matchingBuff := 1 + stats.MatchingBuff/100.0
+	championshipsBuff := 1 + stats.Buff/100.0
 
 	total *= 1 + partnerFlow.Boost/100.0
 	weakenScore *= 1 + partnerFlow.Boost/100.0
@@ -178,11 +191,11 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 
 func printPartnerFlow(flow models.PartnerFlow) {
 	fmt.Println("=== Partner Flow Debug ===")
-	fmt.Printf("Boost: %.1f%% | WeakenRate: %.1f%%\n", flow.Boost, flow.WeakenRate*100)
+	fmt.Printf("Boost: %.1f%%\n", flow.Boost)
 	fmt.Println()
 
 	for periodIdx, period := range flow.Periods {
-		fmt.Printf("Period %d:\n", periodIdx+1)
+		fmt.Printf("Period %d: | WeakenRate: %.1f%%\n", periodIdx+1, period.WeakenRate*100)
 		fmt.Println("Skills:")
 
 		for _, skill := range period.SkillSet.Skills {
@@ -213,6 +226,7 @@ func printPartnerFlow(flow models.PartnerFlow) {
 			}
 
 			fmt.Printf("    CanBeCrit: %t\n", skill.CanBeCrit)
+			fmt.Printf("    NoWeakenPeriod: %t\n", skill.NoWeakenPeriod)
 			fmt.Println()
 		}
 	}

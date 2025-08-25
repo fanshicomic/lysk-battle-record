@@ -13,7 +13,7 @@ func (p Lumiere) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -31,9 +31,9 @@ func (p Lumiere) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		WeakenRate: weakenRate,
 	}
 
 	return flow
@@ -42,15 +42,13 @@ func (p Lumiere) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 func (p Lumiere) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 	var skill models.Skill
+
 	if stats.Weapon == "专武" {
-		skill = models.Skill{
-			Name:        "主动",
-			Base:        403,
-			AttackRate:  215,
-			DefenseRate: 852,
-			Count:       energy - 8,
-			CanBeCrit:   true,
-		}
+		skill = getDefaultActiveSkill()
+		skill.Base = 403
+		skill.AttackRate = 215
+		skill.DefenseRate = 852
+		skill.Count = energy - 8
 	} else {
 		skill = getActiveSkillForWeapon(stats.Weapon, energy)
 	}
@@ -70,58 +68,45 @@ func (p Lumiere) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p Lumiere) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:        "重击",
-			Base:        150,
-			AttackRate:  80,
-			DefenseRate: 317,
-			Count:       35,
-			CanBeCrit:   true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 150
+		skill.AttackRate = 80
+		skill.DefenseRate = 317
+		skill.Count = 35
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p Lumiere) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:        "共鸣",
-		Base:        686,
-		AttackRate:  366,
-		DefenseRate: 1450,
-		Count:       4,
-		CanBeCrit:   true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 686
+	skill.AttackRate = 366
+	skill.DefenseRate = 1450
+	return skill
 }
 
 func (p Lumiere) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  780,
-		DefenseRate: 3060,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 780
+	skill.DefenseRate = 3060
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p Lumiere) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:  "协助",
-		Count: 3,
-	}
-
-	return supportSkill
+func (p Lumiere) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Count = 3
+	return skill
 }
 
 func (p Lumiere) GetPassiveSkill(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	heavyAttackCount := p.GetHeavyAttack(stats).Count
-	supportSkillCount := p.GetSupportSkill().Count
+	supportSkillCount := p.GetSupportSkill(stats).Count
 	partnerCount := 26 // tested
 
 	if stats.Weapon != "专武" {

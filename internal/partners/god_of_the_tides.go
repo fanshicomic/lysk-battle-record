@@ -1,7 +1,6 @@
 package partners
 
 import (
-	"fmt"
 	"lysk-battle-record/internal/models"
 	"math"
 )
@@ -17,7 +16,7 @@ func (p GodOfTheTides) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -35,10 +34,10 @@ func (p GodOfTheTides) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		Boost:      30 * (float64(p.GetRainCount(stats)) / 6), // 下雨30%增伤，持续10秒
-		WeakenRate: weakenRate,
+		Boost: 30 * (float64(p.GetRainCount(stats)) / 6), // 下雨30%增伤，持续10秒
 	}
 
 	return flow
@@ -53,15 +52,13 @@ func (p GodOfTheTides) GetActiveSkill(stats models.Stats) models.Skill {
 	count := int(math.Min(float64(energy-8), 6))
 
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "主动",
-			Base:       73,
-			AttackRate: 39,
-			HpRate:     3.5,
-			Count:      count,
-			CritRate:   30 * float64(count) * 6 / 60,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 73
+		skill.AttackRate = 39
+		skill.HpRate = 3.5
+		skill.Count = count
+		skill.CritRate = 30 * float64(count) * 6 / 60
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -69,60 +66,47 @@ func (p GodOfTheTides) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p GodOfTheTides) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "重击",
-			Base:       182,
-			AttackRate: 97,
-			HpRate:     9,
-			Count:      30,
-			CritRate:   p.getExtraCritRate(stats),
-			CanBeCrit:  true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 182
+		skill.AttackRate = 97
+		skill.HpRate = 9
+		skill.Count = 30
+		skill.CritRate = p.getExtraCritRate(stats)
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p GodOfTheTides) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:       "共鸣",
-		Base:       995,
-		AttackRate: 531,
-		HpRate:     47.8,
-		Count:      4,
-		CritRate:   p.getExtraCritRate(stats),
-		CanBeCrit:  true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 995
+	skill.AttackRate = 531
+	skill.HpRate = 47.8
+	skill.CritRate = p.getExtraCritRate(stats)
+	return skill
 }
 
 func (p GodOfTheTides) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  780,
-		HpRate:      69.4,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 780
+	skill.HpRate = 69.4
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p GodOfTheTides) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:  "协助",
-		Count: 6,
-	}
-
-	return supportSkill
+func (p GodOfTheTides) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Count = 6
+	return skill
 }
 
 func (p GodOfTheTides) GetPassiveSkill(stats models.Stats) models.Skill {
 	singleTimeCount := 7
 	activeSkillCount := p.GetActiveSkill(stats).Count
-	supportSkillCount := p.GetSupportSkill().Count
+	supportSkillCount := p.GetSupportSkill(stats).Count
 
 	if stats.Weapon != "专武" {
 		activeSkillCount = 0
@@ -138,8 +122,6 @@ func (p GodOfTheTides) GetPassiveSkill(stats models.Stats) models.Skill {
 		CritRate:    p.getExtraCritRate(stats),
 		CanBeCrit:   true,
 	}
-
-	fmt.Println(passiveSkill.DamageBoost)
 
 	return passiveSkill
 }

@@ -1,14 +1,16 @@
 package partners
 
 import (
-	"lysk-battle-record/internal/models"
 	"math"
+
+	"lysk-battle-record/internal/models"
 )
 
 func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 	activeSkill := models.Skill{
-		Name:  "主动",
-		Count: energy - 8,
+		Name:      "主动",
+		Count:     energy - 8,
+		CanBeCrit: true,
 	}
 
 	switch weapon {
@@ -37,8 +39,9 @@ func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 
 func getHeavyAttackForWeapon(weapon string) models.Skill {
 	heavyAttack := models.Skill{
-		Name:  "重击",
-		Count: 30,
+		Name:      "重击",
+		Count:     30,
+		CanBeCrit: true,
 	}
 
 	switch weapon {
@@ -79,7 +82,43 @@ func getOathCount(stats models.Stats) int {
 
 func getWeakenRate(matching string) float64 {
 	if matching == "顺" {
-		return 0.34
+		return 0.50
 	}
-	return 0.17
+	return 0.25
+}
+
+func getDefaultActiveSkill() models.Skill {
+	return models.Skill{
+		Name:      "主动",
+		CanBeCrit: true,
+	}
+}
+
+func getDefaultHeavyAttack() models.Skill {
+	return models.Skill{
+		Name:      "重击",
+		CanBeCrit: true,
+	}
+}
+
+func getDefaultResonanceSkill() models.Skill {
+	return models.Skill{
+		Name:           "共鸣",
+		Count:          4,
+		CanBeCrit:      true,
+		NoWeakenPeriod: true,
+	}
+}
+
+func getDefaultOathSkill() models.Skill {
+	return models.Skill{
+		Name: "誓约",
+	}
+}
+
+func getDefaultSupportSkill() models.Skill {
+	return models.Skill{
+		Name:      "协助",
+		CanBeCrit: true,
+	}
 }

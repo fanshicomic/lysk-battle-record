@@ -13,7 +13,7 @@ func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFl
 	heavyAttack := p.GetHeavyAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
-	supportSkill := p.GetSupportSkill()
+	supportSkill := p.GetSupportSkill(stats)
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
@@ -35,10 +35,10 @@ func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFl
 						passiveSkill,
 					},
 				},
+				WeakenRate: weakenRate,
 			},
 		},
-		WeakenRate: weakenRate,
-		Boost:      boost,
+		Boost: boost,
 	}
 
 	return flow
@@ -48,14 +48,12 @@ func (p RelentLessConqueror) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:        "主动",
-			Base:        342,
-			AttackRate:  456,
-			Count:       energy - 8,
-			DamageBoost: 10.0 / (10.0 - 6.0*0.5),
-			CanBeCrit:   true,
-		}
+		skill := getDefaultActiveSkill()
+		skill.Base = 342
+		skill.AttackRate = 456
+		skill.Count = energy - 8
+		skill.DamageBoost = 10.0 / (10.0 - 6.0*0.5)
+		return skill
 	}
 
 	return getActiveSkillForWeapon(stats.Weapon, energy)
@@ -63,52 +61,38 @@ func (p RelentLessConqueror) GetActiveSkill(stats models.Stats) models.Skill {
 
 func (p RelentLessConqueror) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return models.Skill{
-			Name:       "重击",
-			Base:       160,
-			AttackRate: 213,
-			Count:      20,
-			CanBeCrit:  true,
-		}
+		skill := getDefaultHeavyAttack()
+		skill.Base = 160
+		skill.AttackRate = 213
+		skill.Count = 20
+		return skill
 	}
 
 	return getHeavyAttackForWeapon(stats.Weapon)
 }
 
 func (p RelentLessConqueror) GetResonanceSkill(stats models.Stats) models.Skill {
-	resonanceSkill := models.Skill{
-		Name:       "共鸣",
-		Base:       1094,
-		AttackRate: 1458,
-		Count:      4,
-		CanBeCrit:  true,
-	}
-
-	return resonanceSkill
+	skill := getDefaultResonanceSkill()
+	skill.Base = 1094
+	skill.AttackRate = 1458
+	return skill
 }
 
 func (p RelentLessConqueror) GetOathSkill(stats models.Stats) models.Skill {
-	oathSkill := models.Skill{
-		Name:        "誓约",
-		Base:        1440,
-		AttackRate:  1920,
-		DamageBoost: stats.OathBoost,
-		Count:       getOathCount(stats),
-	}
-
-	return oathSkill
+	skill := getDefaultOathSkill()
+	skill.Base = 1440
+	skill.AttackRate = 1920
+	skill.DamageBoost = stats.OathBoost
+	skill.Count = getOathCount(stats)
+	return skill
 }
 
-func (p RelentLessConqueror) GetSupportSkill() models.Skill {
-	supportSkill := models.Skill{
-		Name:       "协助",
-		Base:       239,
-		AttackRate: 318,
-		Count:      6,
-		CanBeCrit:  true,
-	}
-
-	return supportSkill
+func (p RelentLessConqueror) GetSupportSkill(stats models.Stats) models.Skill {
+	skill := getDefaultSupportSkill()
+	skill.Base = 239
+	skill.AttackRate = 318
+	skill.Count = 6
+	return skill
 }
 
 func (p RelentLessConqueror) GetPassiveSkill(stats models.Stats) models.Skill {
