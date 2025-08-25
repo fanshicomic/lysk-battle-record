@@ -54,11 +54,11 @@ type PartnerSkillSet struct {
 type PartnerPeriod struct {
 	SkillSet   PartnerSkillSet
 	WeakenRate float64
+	Boost      float64
 }
 
 type PartnerFlow struct {
 	Periods []PartnerPeriod
-	Boost   float64
 }
 
 type SkillBuff struct {

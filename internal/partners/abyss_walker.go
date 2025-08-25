@@ -54,10 +54,9 @@ func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 					},
 				},
 				WeakenRate: weakenRate,
+				Boost:      8 * 0.7, // 4*0.8: 潜能回复时的攻击增益参数
 			},
 		},
-		// 4*0.8: 潜能回复时的攻击增益参数
-		Boost: 8 * 0.7,
 	}
 
 	return flow

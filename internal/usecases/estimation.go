@@ -50,6 +50,8 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.RelentLessConqueror{}
 	case "深渊主宰":
 		partner = partners.AbysmSovereign{}
+	case "远空执舰官":
+		partner = partners.FarspaceColonel{}
 	default:
 		partner = partners.AbysmSovereign{}
 	}
@@ -75,6 +77,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Captivating{}
 	case "深渊":
 		setCard = set_cards.Abyssal{}
+	case "远空":
+		setCard = set_cards.Farspace{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -123,6 +127,9 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 
 			// apply damage boost
 			rawSkillScore *= 1 + skill.DamageBoost/100
+
+			// apply period boost
+			rawSkillScore *= 1 + period.Boost/100
 
 			// consider level - defence relationship
 			levelDefenseRatio := 1 + float64(stats.TotalLevel)/(float64(stats.TotalLevel)+300+(80*3+100)*(1-skill.EnemyDefenceReduction/100))
@@ -176,9 +183,6 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 	matchingBuff := 1 + stats.MatchingBuff/100.0
 	championshipsBuff := 1 + stats.Buff/100.0
 
-	total *= 1 + partnerFlow.Boost/100.0
-	weakenScore *= 1 + partnerFlow.Boost/100.0
-	nonWeakenScore *= 1 + partnerFlow.Boost/100.0
 	buffedTotal := int(total * matchingBuff * championshipsBuff)
 
 	return models.CombatPower{
@@ -191,11 +195,10 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 
 func printPartnerFlow(flow models.PartnerFlow) {
 	fmt.Println("=== Partner Flow Debug ===")
-	fmt.Printf("Boost: %.1f%%\n", flow.Boost)
 	fmt.Println()
 
 	for periodIdx, period := range flow.Periods {
-		fmt.Printf("Period %d: | WeakenRate: %.1f%%\n", periodIdx+1, period.WeakenRate*100)
+		fmt.Printf("Period %d: | WeakenRate: %.1f%% | Period Boost: %.1f%%\n", periodIdx+1, period.WeakenRate*100, period.Boost)
 		fmt.Println("Skills:")
 
 		for _, skill := range period.SkillSet.Skills {

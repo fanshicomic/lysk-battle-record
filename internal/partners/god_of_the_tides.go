@@ -35,9 +35,9 @@ func (p GodOfTheTides) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 					},
 				},
 				WeakenRate: weakenRate,
+				Boost:      30 * (float64(p.GetRainCount(stats)) / 6), // 下雨30%增伤，持续10秒
 			},
 		},
-		Boost: 30 * (float64(p.GetRainCount(stats)) / 6), // 下雨30%增伤，持续10秒
 	}
 
 	return flow

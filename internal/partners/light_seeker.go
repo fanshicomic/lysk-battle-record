@@ -32,9 +32,9 @@ func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 					},
 				},
 				WeakenRate: weakenRate,
+				Boost:      25, // 溯光力场内10%攻击增益+破盾后增伤20%
 			},
 		},
-		Boost: 25, // 溯光力场内10%攻击增益+破盾后增伤20%
 	}
 
 	return flow

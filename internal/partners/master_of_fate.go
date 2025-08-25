@@ -18,8 +18,8 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	altPassiveSkill := p.GetAltResonanceSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
-	if stats.SetCard == "拥雪" && stats.Stage != "I" {
-		weakenRate *= 1.2
+	if stats.SetCard == "拥雪" && stats.Stage != "I" && stats.Stage != "无套装" {
+		weakenRate *= 1.1
 	}
 
 	flow := models.PartnerFlow{

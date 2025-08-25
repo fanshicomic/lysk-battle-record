@@ -18,7 +18,7 @@ func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFl
 
 	weakenRate := getWeakenRate(stats.Matching)
 	boost := (4.0 * 8.0 / 60.0) * 80.0
-	if stats.SetCard == "掠心" && stats.Stage != "I" {
+	if stats.SetCard == "掠心" && stats.Stage != "I" && stats.Stage != "无套装" {
 		boost = 80
 	}
 
@@ -36,9 +36,9 @@ func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFl
 					},
 				},
 				WeakenRate: weakenRate,
+				Boost:      boost,
 			},
 		},
-		Boost: boost,
 	}
 
 	return flow
