@@ -10,7 +10,7 @@ func (p LightSeeker) GetName() string {
 
 func (p LightSeeker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -54,16 +54,16 @@ func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p LightSeeker) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p LightSeeker) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 118
 		skill.AttackRate = 157
 		skill.Count = 30
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p LightSeeker) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -77,7 +77,7 @@ func (p LightSeeker) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
 	skill.Base = 1440
 	skill.AttackRate = 1920
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

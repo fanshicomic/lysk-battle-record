@@ -15,7 +15,7 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	lightAttack := p.GetLightAttack(stats)
 	lightAttackSecondPeriod := p.GetLightAttackSecondPeriod(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	resonanceAltSkill := p.GetResonanceAltSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
@@ -62,6 +62,10 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	if stats.SetCard == "远空" {
 		boost = 20
 	}
+	weakenRate := getWeakenRate(stats.Matching)
+	if stats.Weapon != "专武" {
+		weakenRate = 0
+	}
 	secondPeriod := models.PartnerPeriod{
 		SkillSet: models.PartnerSkillSet{
 			Skills: []models.Skill{
@@ -75,7 +79,7 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 				fireAltSkill,
 			},
 		},
-		WeakenRate: getWeakenRate(stats.Matching) * 2,
+		WeakenRate: weakenRate * 2,
 		Boost:      float64(boost),
 	}
 
@@ -101,9 +105,9 @@ func (p FarspaceColonel) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p FarspaceColonel) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p FarspaceColonel) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 133
 		skill.AttackRate = 71
 		skill.DefenseRate = 281
@@ -111,7 +115,7 @@ func (p FarspaceColonel) GetHeavyAttack(stats models.Stats) models.Skill {
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p FarspaceColonel) GetLightAttack(stats models.Stats) models.Skill {
@@ -150,7 +154,7 @@ func (p FarspaceColonel) GetOathSkill(stats models.Stats) models.Skill {
 	skill.Base = 1440
 	skill.AttackRate = 780
 	skill.DefenseRate = 3060
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	if stats.Weapon != "专武" {
 		skill.Name = "非专武誓约(无虚弱期)"

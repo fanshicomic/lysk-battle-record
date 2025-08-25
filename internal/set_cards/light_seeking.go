@@ -32,7 +32,7 @@ func (c LightSeeking) GetSetCardBuff() map[string]models.StageBuff {
 		},
 		"II": {
 			Buffs: map[string]models.SkillBuff{
-				"所有":       {DamageBoost: 8},
+				"所有":       {DamageBoost: 8 * 1.1},
 				"主动":       {DamageBoost: 25},
 				"重剑主动":   {DamageBoost: 25},
 				"单手剑主动": {DamageBoost: 25},

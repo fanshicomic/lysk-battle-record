@@ -37,9 +37,9 @@ func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 	return activeSkill
 }
 
-func getHeavyAttackForWeapon(weapon string) models.Skill {
+func getBasicAttackForWeapon(weapon string) models.Skill {
 	heavyAttack := models.Skill{
-		Name:      "重击",
+		Name:      "普攻",
 		Count:     30,
 		CanBeCrit: true,
 	}
@@ -94,9 +94,9 @@ func getDefaultActiveSkill() models.Skill {
 	}
 }
 
-func getDefaultHeavyAttack() models.Skill {
+func getDefaultBasicAttack() models.Skill {
 	return models.Skill{
-		Name:      "重击",
+		Name:      "普攻",
 		CanBeCrit: true,
 	}
 }

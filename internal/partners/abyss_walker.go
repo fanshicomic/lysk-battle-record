@@ -10,7 +10,7 @@ func (p AbyssWalker) GetName() string {
 
 func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -82,9 +82,9 @@ func (p AbyssWalker) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p AbyssWalker) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 144
 		skill.AttackRate = 192
 		skill.Count = 35
@@ -92,7 +92,7 @@ func (p AbyssWalker) GetHeavyAttack(stats models.Stats) models.Skill {
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p AbyssWalker) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -107,7 +107,7 @@ func (p AbyssWalker) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
 	skill.Base = 1440
 	skill.AttackRate = 1920
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

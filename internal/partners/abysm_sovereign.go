@@ -10,7 +10,7 @@ func (p AbysmSovereign) GetName() string {
 
 func (p AbysmSovereign) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	resonanceAltSkill := p.GetAltResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
@@ -69,12 +69,12 @@ func (p AbysmSovereign) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p AbysmSovereign) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p AbysmSovereign) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		return p.GetLightAttack(stats)
 	}
 
-	skill := getHeavyAttackForWeapon(stats.Weapon)
+	skill := getBasicAttackForWeapon(stats.Weapon)
 	skill.DamageBoost = p.getExtraBuff("普攻", stats)
 	return skill
 }
@@ -82,7 +82,7 @@ func (p AbysmSovereign) GetHeavyAttack(stats models.Stats) models.Skill {
 func (p AbysmSovereign) GetLightAttack(stats models.Stats) models.Skill {
 	activeSkillCount := p.GetActiveSkill(stats).Count
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Name = "普攻"
 		skill.Base = 162
 		skill.AttackRate = 87
@@ -92,7 +92,7 @@ func (p AbysmSovereign) GetLightAttack(stats models.Stats) models.Skill {
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p AbysmSovereign) GetOathSkill(stats models.Stats) models.Skill {
@@ -100,7 +100,7 @@ func (p AbysmSovereign) GetOathSkill(stats models.Stats) models.Skill {
 	oathSkill.Base = 1440
 	oathSkill.AttackRate = 780
 	oathSkill.HpRate = 69.4
-	oathSkill.DamageBoost = stats.OathBoost
+	oathSkill.OathBoost = stats.OathBoost
 	oathSkill.Count = getOathCount(stats)
 
 	return oathSkill

@@ -10,7 +10,7 @@ func (p MasterOfFate) GetName() string {
 
 func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -60,16 +60,16 @@ func (p MasterOfFate) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p MasterOfFate) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p MasterOfFate) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 141
 		skill.AttackRate = 188
 		skill.Count = 30
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p MasterOfFate) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -83,7 +83,7 @@ func (p MasterOfFate) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
 	skill.Base = 1440
 	skill.AttackRate = 1920
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

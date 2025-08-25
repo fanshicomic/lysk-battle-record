@@ -10,7 +10,7 @@ func (p DefaultPartner) GetName() string {
 
 func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -47,23 +47,24 @@ func (p DefaultPartner) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p DefaultPartner) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p DefaultPartner) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		return getDefaultHeavyAttack()
+		return getDefaultBasicAttack()
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p DefaultPartner) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }
 
 func (p DefaultPartner) GetResonanceSkill(stats models.Stats) models.Skill {
-	return getDefaultResonanceSkill()
+	skill := getDefaultResonanceSkill()
+	return skill
 }
 
 func (p DefaultPartner) GetSupportSkill(stats models.Stats) models.Skill {
@@ -73,5 +74,7 @@ func (p DefaultPartner) GetSupportSkill(stats models.Stats) models.Skill {
 }
 
 func (p DefaultPartner) GetPassiveSkill(stats models.Stats) models.Skill {
-	return models.Skill{}
+	return models.Skill{
+		Name: "被动",
+	}
 }

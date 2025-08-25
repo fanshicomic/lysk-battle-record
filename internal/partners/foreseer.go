@@ -10,7 +10,7 @@ func (p Foreseer) GetName() string {
 
 func (p Foreseer) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -54,14 +54,14 @@ func (p Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p Foreseer) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		lightAttackDamageAdjustment := 0.0
 		if stats.Stage != "IV" {
 			lightAttackDamageAdjustment = -20.0
 		}
 
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 167
 		skill.AttackRate = 89
 		skill.DefenseRate = 353
@@ -70,7 +70,7 @@ func (p Foreseer) GetHeavyAttack(stats models.Stats) models.Skill {
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p Foreseer) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -86,7 +86,7 @@ func (p Foreseer) GetOathSkill(stats models.Stats) models.Skill {
 	skill.Base = 1440
 	skill.AttackRate = 780
 	skill.DefenseRate = 3060
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

@@ -13,7 +13,7 @@ func (p GodOfTheTides) GetName() string {
 
 func (p GodOfTheTides) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -64,9 +64,9 @@ func (p GodOfTheTides) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p GodOfTheTides) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p GodOfTheTides) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 182
 		skill.AttackRate = 97
 		skill.HpRate = 9
@@ -75,7 +75,7 @@ func (p GodOfTheTides) GetHeavyAttack(stats models.Stats) models.Skill {
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p GodOfTheTides) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -92,7 +92,7 @@ func (p GodOfTheTides) GetOathSkill(stats models.Stats) models.Skill {
 	skill.Base = 1440
 	skill.AttackRate = 780
 	skill.HpRate = 69.4
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

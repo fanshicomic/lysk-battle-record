@@ -52,6 +52,8 @@ func getPartnerFlow(stats models.Stats) models.PartnerFlow {
 		partner = partners.AbysmSovereign{}
 	case "远空执舰官":
 		partner = partners.FarspaceColonel{}
+	case "终极兵器X-02":
+		partner = partners.UltimateWeaponX02{}
 	default:
 		partner = partners.AbysmSovereign{}
 	}
@@ -79,6 +81,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Abyssal{}
 	case "远空":
 		setCard = set_cards.Farspace{}
+	case "寂路":
+		setCard = set_cards.LoneRoad{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -94,6 +98,7 @@ func applySetCardBuff(flow *models.PartnerFlow, setCardBuff models.StageBuff) {
 				skill.CritDmg += allBuff.CritDmg
 				skill.WeakenBoost += allBuff.WeakenBoost
 				skill.DamageBoost += allBuff.DamageBoost
+				skill.OathBoost += allBuff.OathBoost
 				if allBuff.CountBonus > 1 {
 					skill.Count = int(float64(skill.Count) * allBuff.CountBonus)
 				}
@@ -104,6 +109,7 @@ func applySetCardBuff(flow *models.PartnerFlow, setCardBuff models.StageBuff) {
 				skill.CritDmg += skillBuff.CritDmg
 				skill.WeakenBoost += skillBuff.WeakenBoost
 				skill.DamageBoost += skillBuff.DamageBoost
+				skill.OathBoost += skillBuff.OathBoost
 				if skillBuff.CountBonus > 1 {
 					skill.Count = int(float64(skill.Count) * skillBuff.CountBonus)
 				}
@@ -125,11 +131,13 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 				(skill.AttackRate/100)*float64(stats.Attack) +
 				(skill.DefenseRate/100)*float64(stats.Defense)
 
-			// apply damage boost
-			rawSkillScore *= 1 + skill.DamageBoost/100
+			// apply damage boost and period boost
+			rawSkillScore *= 1 + (skill.DamageBoost+period.Boost)/100
 
-			// apply period boost
-			rawSkillScore *= 1 + period.Boost/100
+			// apply oath boost
+			if skill.Name == "誓约" || skill.Name == "誓约-同频觉醒" || skill.Name == "誓约-同频攻击" {
+				rawSkillScore *= 1 + skill.OathBoost/100
+			}
 
 			// consider level - defence relationship
 			levelDefenseRatio := 1 + float64(stats.TotalLevel)/(float64(stats.TotalLevel)+300+(80*3+100)*(1-skill.EnemyDefenceReduction/100))
@@ -156,13 +164,6 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 
 			// consider weaken period
 			weakenSkillCount := weakenRate * float64(skill.Count)
-			if skill.Name == "共鸣" { // 共鸣技不会进入虚弱期
-				weakenSkillCount = 0
-			}
-
-			if skill.Name == "誓约" {
-				weakenSkillCount = 1
-			}
 			weakenPeriodScore := rawSkillScore * weakenSkillCount
 			weakenBoost := stats.WeakenBoost + skill.WeakenBoost
 			if stats.Matching == "顺" {
@@ -223,6 +224,9 @@ func printPartnerFlow(flow models.PartnerFlow) {
 			}
 			if skill.WeakenBoost > 0 {
 				fmt.Printf("    WeakenBoost: %.1f%%", skill.WeakenBoost)
+			}
+			if skill.OathBoost > 0 {
+				fmt.Printf("    OathBoost: %.1f%%", skill.OathBoost)
 			}
 			if skill.EnemyDefenceReduction > 0 {
 				fmt.Printf("    DefenceReduction: %.1f%%", skill.EnemyDefenceReduction)

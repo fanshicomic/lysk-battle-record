@@ -5,7 +5,7 @@ import "lysk-battle-record/internal/models"
 type Farspace struct{}
 
 func (c Farspace) GetName() string {
-	return "无套装"
+	return "远空"
 }
 
 func (c Farspace) GetSetCardBuff() map[string]models.StageBuff {

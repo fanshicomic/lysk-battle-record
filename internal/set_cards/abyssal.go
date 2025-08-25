@@ -5,7 +5,7 @@ import "lysk-battle-record/internal/models"
 type Abyssal struct{}
 
 func (c Abyssal) GetName() string {
-	return "无套装"
+	return "深渊"
 }
 
 func (c Abyssal) GetSetCardBuff() map[string]models.StageBuff {

@@ -10,7 +10,7 @@ func (p RelentLessConqueror) GetName() string {
 
 func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetHeavyAttack(stats)
+	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -59,16 +59,16 @@ func (p RelentLessConqueror) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p RelentLessConqueror) GetHeavyAttack(stats models.Stats) models.Skill {
+func (p RelentLessConqueror) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
-		skill := getDefaultHeavyAttack()
+		skill := getDefaultBasicAttack()
 		skill.Base = 160
 		skill.AttackRate = 213
 		skill.Count = 20
 		return skill
 	}
 
-	return getHeavyAttackForWeapon(stats.Weapon)
+	return getBasicAttackForWeapon(stats.Weapon)
 }
 
 func (p RelentLessConqueror) GetResonanceSkill(stats models.Stats) models.Skill {
@@ -82,7 +82,7 @@ func (p RelentLessConqueror) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
 	skill.Base = 1440
 	skill.AttackRate = 1920
-	skill.DamageBoost = stats.OathBoost
+	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }

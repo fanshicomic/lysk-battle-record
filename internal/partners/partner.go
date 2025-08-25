@@ -8,7 +8,7 @@ type Partner interface {
 	GetPartnerFlow(stats models.Stats) models.PartnerFlow
 
 	GetActiveSkill(stats models.Stats) models.Skill
-	GetHeavyAttack(stats models.Stats) models.Skill
+	GetBasicAttack(stats models.Stats) models.Skill
 	GetOathSkill(stats models.Stats) models.Skill
 	GetResonanceSkill(stats models.Stats) models.Skill
 	GetSupportSkill(stats models.Stats) models.Skill
