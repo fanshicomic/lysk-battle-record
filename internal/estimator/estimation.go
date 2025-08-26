@@ -22,6 +22,9 @@ func (e *LyskCPEstimator) EstimateCombatPower(record models.Record) models.Comba
 	stats := record.ToStats()
 	myCompanion := getCompanion(stats)
 	flow := myCompanion.GetCompanionFlow(stats)
+	if myCompanion.GetName() == "默认搭档" {
+		flow = models.CompanionFlow{}
+	}
 	setCard := getSetCard(stats)
 	setCardBuff := getSetCardBuff(stats, setCard)
 	applySetCardBuff(&flow, setCardBuff)
@@ -61,7 +64,7 @@ func getCompanion(stats models.Stats) companions.Companion {
 	case "极地军医":
 		return companions.MedicOfTheArctic{}
 	default:
-		return companions.AbysmSovereign{}
+		return companions.DefaultCompanion{}
 	}
 }
 
