@@ -54,7 +54,7 @@ func (p LemurianSeaGod) GetCompanionFlow(stats models.Stats) models.CompanionFlo
 						godPeriodThunder,
 					},
 				},
-				WeakenRate: weakenRate,
+				WeakenRate: weakenRate * 2 * 0.8, // 神眷期导致虚弱期变少
 			},
 		},
 	}

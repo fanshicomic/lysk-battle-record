@@ -56,6 +56,8 @@ func getCompanion(stats models.Stats) companions.Companion {
 		return companions.UltimateWeaponX02{}
 	case "利莫里亚海神":
 		return companions.LemurianSeaGod{}
+	case "暗蚀国王":
+		return companions.KingOfDarknight{}
 	case "极地军医":
 		return companions.MedicOfTheArctic{}
 	default:
@@ -88,6 +90,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.LoneRoad{}
 	case "雾海":
 		setCard = set_cards.Mistsea{}
+	case "夜誓":
+		setCard = set_cards.Nightvow{}
 	default:
 		setCard = set_cards.NoSet{}
 	}
@@ -107,6 +111,7 @@ func getSetCardBuff(stats models.Stats, setCard set_cards.SetCard) models.StageB
 		"远空执舰官":   "远空",
 		"终极兵器X-02": "寂路",
 		"利莫里亚海神": "雾海",
+		"暗蚀国王":     "夜誓",
 	}
 	var setCardBuff models.StageBuff
 	if setCard.GetName() == setMap[stats.Companion] {
