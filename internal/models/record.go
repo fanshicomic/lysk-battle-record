@@ -609,6 +609,9 @@ func (r Record) ToStats() Stats {
 	hp, _ := strconv.Atoi(r.HP)
 	defense, _ := strconv.Atoi(r.Defense)
 	totalLevel, _ := strconv.Atoi(r.TotalLevel)
+	if totalLevel == 0 {
+		totalLevel = 480
+	}
 
 	matchingBuff, _ := strconv.ParseFloat(r.MatchingBuff, 64)
 	if r.MatchingBuff == "不确定" {
