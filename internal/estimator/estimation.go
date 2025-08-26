@@ -1,10 +1,10 @@
-package usecases
+package estimator
 
 import (
 	"fmt"
 
+	"lysk-battle-record/internal/companions"
 	"lysk-battle-record/internal/models"
-	"lysk-battle-record/internal/partners"
 	"lysk-battle-record/internal/set_cards"
 )
 
@@ -12,52 +12,52 @@ type CombatPowerEstimator interface {
 	EstimateCombatPower(record models.Record) models.CombatPower
 }
 
-type combatPowerEstimator struct{}
+type LyskCPEstimator struct{}
 
 func NewCombatPowerEstimator() CombatPowerEstimator {
-	return &combatPowerEstimator{}
+	return &LyskCPEstimator{}
 }
 
-func (e *combatPowerEstimator) EstimateCombatPower(record models.Record) models.CombatPower {
+func (e *LyskCPEstimator) EstimateCombatPower(record models.Record) models.CombatPower {
 	stats := record.ToStats()
-	partnerFlow := getPartnerFlow(stats)
+	companionFlow := getCompanionFlow(stats)
 	setCard := getSetCard(stats)
 	setCardBuff := setCard.GetSetCardBuff()[stats.Stage]
-	applySetCardBuff(&partnerFlow, setCardBuff)
+	applySetCardBuff(&companionFlow, setCardBuff)
 
-	score := estimate(stats, partnerFlow)
-	printPartnerFlow(partnerFlow)
+	score := estimate(stats, companionFlow)
+	printCompanionFlow(companionFlow)
 	fmt.Printf("Final Score: %+v\n", score)
 	return score
 }
 
-func getPartnerFlow(stats models.Stats) models.PartnerFlow {
-	var partner partners.Partner
-	switch stats.Partner {
+func getCompanionFlow(stats models.Stats) models.CompanionFlow {
+	var companion companions.Companion
+	switch stats.Companion {
 	case "逐光骑士":
-		partner = partners.LightSeeker{}
+		companion = companions.LightSeeker{}
 	case "永恒先知":
-		partner = partners.Foreseer{}
+		companion = companions.Foreseer{}
 	case "深海潜行者":
-		partner = partners.AbyssWalker{}
+		companion = companions.AbyssWalker{}
 	case "潮汐之神":
-		partner = partners.GodOfTheTides{}
+		companion = companions.GodOfTheTides{}
 	case "光猎":
-		partner = partners.Lumiere{}
+		companion = companions.Lumiere{}
 	case "九黎司命":
-		partner = partners.MasterOfFate{}
+		companion = companions.MasterOfFate{}
 	case "无尽掠夺者":
-		partner = partners.RelentLessConqueror{}
+		companion = companions.RelentLessConqueror{}
 	case "深渊主宰":
-		partner = partners.AbysmSovereign{}
+		companion = companions.AbysmSovereign{}
 	case "远空执舰官":
-		partner = partners.FarspaceColonel{}
+		companion = companions.FarspaceColonel{}
 	case "终极兵器X-02":
-		partner = partners.UltimateWeaponX02{}
+		companion = companions.UltimateWeaponX02{}
 	default:
-		partner = partners.AbysmSovereign{}
+		companion = companions.AbysmSovereign{}
 	}
-	return partner.GetPartnerFlow(stats)
+	return companion.GetCompanionFlow(stats)
 }
 
 func getSetCard(stats models.Stats) set_cards.SetCard {
@@ -89,7 +89,7 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 	return setCard
 }
 
-func applySetCardBuff(flow *models.PartnerFlow, setCardBuff models.StageBuff) {
+func applySetCardBuff(flow *models.CompanionFlow, setCardBuff models.StageBuff) {
 	for periodIdx := range flow.Periods {
 		period := &flow.Periods[periodIdx]
 		for i, skill := range period.SkillSet.Skills {
@@ -120,9 +120,9 @@ func applySetCardBuff(flow *models.PartnerFlow, setCardBuff models.StageBuff) {
 	}
 }
 
-func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatPower {
+func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.CombatPower {
 	var total, weakenScore, nonWeakenScore float64 = 0, 0, 0
-	for _, period := range partnerFlow.Periods {
+	for _, period := range companionFlow.Periods {
 		var score float64 = 0
 
 		for _, skill := range period.SkillSet.Skills {
@@ -194,8 +194,8 @@ func estimate(stats models.Stats, partnerFlow models.PartnerFlow) models.CombatP
 	}
 }
 
-func printPartnerFlow(flow models.PartnerFlow) {
-	fmt.Println("=== Partner Flow Debug ===")
+func printCompanionFlow(flow models.CompanionFlow) {
+	fmt.Println("=== Companion Flow Debug ===")
 	fmt.Println()
 
 	for periodIdx, period := range flow.Periods {

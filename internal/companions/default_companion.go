@@ -1,14 +1,14 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
-type DefaultPartner struct{}
+type DefaultCompanion struct{}
 
-func (p DefaultPartner) GetName() string {
+func (p DefaultCompanion) GetName() string {
 	return "默认搭档"
 }
 
-func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p DefaultCompanion) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -17,10 +17,10 @@ func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	passiveSkill := p.GetPassiveSkill(stats)
 
 	weakenRate := getWeakenRate(stats.Matching)
-	return models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	return models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
 						heavyAttack,
@@ -36,7 +36,7 @@ func (p DefaultPartner) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	}
 }
 
-func (p DefaultPartner) GetActiveSkill(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetActiveSkill(stats models.Stats) models.Skill {
 	energy := stats.GetEnergy()
 	if stats.Weapon == "专武" {
 		skill := getDefaultActiveSkill()
@@ -47,7 +47,7 @@ func (p DefaultPartner) GetActiveSkill(stats models.Stats) models.Skill {
 	return getActiveSkillForWeapon(stats.Weapon, energy)
 }
 
-func (p DefaultPartner) GetBasicAttack(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetBasicAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		return getDefaultBasicAttack()
 	}
@@ -55,25 +55,25 @@ func (p DefaultPartner) GetBasicAttack(stats models.Stats) models.Skill {
 	return getBasicAttackForWeapon(stats.Weapon)
 }
 
-func (p DefaultPartner) GetOathSkill(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetOathSkill(stats models.Stats) models.Skill {
 	skill := getDefaultOathSkill()
 	skill.OathBoost = stats.OathBoost
 	skill.Count = getOathCount(stats)
 	return skill
 }
 
-func (p DefaultPartner) GetResonanceSkill(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetResonanceSkill(stats models.Stats) models.Skill {
 	skill := getDefaultResonanceSkill()
 	return skill
 }
 
-func (p DefaultPartner) GetSupportSkill(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetSupportSkill(stats models.Stats) models.Skill {
 	skill := getDefaultSupportSkill()
 	skill.Count = 6
 	return skill
 }
 
-func (p DefaultPartner) GetPassiveSkill(stats models.Stats) models.Skill {
+func (p DefaultCompanion) GetPassiveSkill(stats models.Stats) models.Skill {
 	return models.Skill{
 		Name: "被动",
 	}

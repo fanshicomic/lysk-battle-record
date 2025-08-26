@@ -1,11 +1,11 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
-type Partner interface {
+type Companion interface {
 	GetName() string
 
-	GetPartnerFlow(stats models.Stats) models.PartnerFlow
+	GetCompanionFlow(stats models.Stats) models.CompanionFlow
 
 	GetActiveSkill(stats models.Stats) models.Skill
 	GetBasicAttack(stats models.Stats) models.Skill

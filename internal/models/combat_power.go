@@ -24,7 +24,7 @@ type Stats struct {
 	OathBoost    float64
 	OathRegen    float64
 	TotalLevel   int
-	Partner      string
+	Companion    string
 	SetCard      string
 	Stage        string
 	Weapon       string
@@ -48,18 +48,18 @@ type Skill struct {
 	NoWeakenPeriod        bool
 }
 
-type PartnerSkillSet struct {
+type CompanionSkillSet struct {
 	Skills []Skill
 }
 
-type PartnerPeriod struct {
-	SkillSet   PartnerSkillSet
+type CompanionPeriod struct {
+	SkillSet   CompanionSkillSet
 	WeakenRate float64
 	Boost      float64
 }
 
-type PartnerFlow struct {
-	Periods []PartnerPeriod
+type CompanionFlow struct {
+	Periods []CompanionPeriod
 }
 
 type SkillBuff struct {

@@ -1,4 +1,4 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
@@ -8,7 +8,7 @@ func (p UltimateWeaponX02) GetName() string {
 	return "终极兵器X-02"
 }
 
-func (p UltimateWeaponX02) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p UltimateWeaponX02) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	basicAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -20,10 +20,10 @@ func (p UltimateWeaponX02) GetPartnerFlow(stats models.Stats) models.PartnerFlow
 	if stats.SetCard != "寂路" || stats.Stage == "I" || stats.Stage == "无套装" {
 		weakenRate *= 0.75
 	}
-	return models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	return models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
 						basicAttack,
@@ -34,7 +34,7 @@ func (p UltimateWeaponX02) GetPartnerFlow(stats models.Stats) models.PartnerFlow
 				WeakenRate: 0,
 			},
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						oathSkill,
 						oathExtraSKill,
@@ -125,7 +125,7 @@ func (p UltimateWeaponX02) GetSupportSkill(stats models.Stats) models.Skill {
 	skill.Base = 461
 	skill.AttackRate = 615
 	skill.Count = 4
-	skill.DamageBoost = 10
+	skill.DamageBoost = 10.0 / 2.0 // only first support skill and enjoy the 量子凝滞 buff
 	return skill
 }
 

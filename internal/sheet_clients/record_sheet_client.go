@@ -110,7 +110,7 @@ func (c *RecordSheetClientImpl) FetchAllSheetData() ([]models.Record, error) {
 		r.WeakenBoost = c.getValue(row, headerIndexMap, "虚弱增伤")
 		r.OathBoost = c.getValue(row, headerIndexMap, "誓约增伤")
 		r.OathRegen = c.getValue(row, headerIndexMap, "誓约回能")
-		r.Partner = c.getValue(row, headerIndexMap, "搭档身份")
+		r.Companion = c.getValue(row, headerIndexMap, "搭档身份")
 		r.SetCard = c.getValue(row, headerIndexMap, "日卡")
 		r.Stage = c.getValue(row, headerIndexMap, "阶数")
 		r.Weapon = c.getValue(row, headerIndexMap, "武器")
@@ -187,7 +187,7 @@ func (c *RecordSheetClientImpl) ProcessRecord(record models.Record) (*models.Rec
 		case "誓约回能":
 			row[index] = record.OathRegen
 		case "搭档身份":
-			row[index] = record.Partner
+			row[index] = record.Companion
 		case "日卡":
 			row[index] = record.SetCard
 		case "阶数":
@@ -290,7 +290,7 @@ func (c *RecordSheetClientImpl) UpdateRecord(record models.Record) error {
 		case "誓约回能":
 			row[index] = record.OathRegen
 		case "搭档身份":
-			row[index] = record.Partner
+			row[index] = record.Companion
 		case "日卡":
 			row[index] = record.SetCard
 		case "阶数":

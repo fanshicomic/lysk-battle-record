@@ -14,34 +14,35 @@ import (
 )
 
 type Record struct {
-	Id           string `json:"id"`
-	RowNumber    int    `json:"row_number"`
-	UserID       string `json:"userID"`
-	Nickname     string `json:"nickname,omitempty"`
-	LevelType    string `json:"关卡"`
-	LevelNumber  string `json:"关数"`
-	LevelMode    string `json:"模式"`
-	Attack       string `json:"攻击"`
-	HP           string `json:"生命"`
-	Defense      string `json:"防御"`
-	Matching     string `json:"对谱"`
-	MatchingBuff string `json:"对谱加成"`
-	CritRate     string `json:"暴击"`
-	CritDmg      string `json:"暴伤"`
-	EnergyRegen  string `json:"加速回能"`
-	WeakenBoost  string `json:"虚弱增伤"`
-	OathBoost    string `json:"誓约增伤"`
-	OathRegen    string `json:"誓约回能"`
-	TotalLevel   string `json:"卡总等级"`
-	Note         string `json:"备注"`
-	Partner      string `json:"搭档身份"`
-	SetCard      string `json:"日卡"`
-	Stage        string `json:"阶数"`
-	Weapon       string `json:"武器"`
-	Buff         string `json:"加成"`
-	Time         string `json:"时间"`
-	StarRank     string `json:"星级"`
-	Deleted      bool   `json:"deleted"`
+	Id           string      `json:"id"`
+	RowNumber    int         `json:"row_number"`
+	UserID       string      `json:"userID"`
+	Nickname     string      `json:"nickname,omitempty"`
+	LevelType    string      `json:"关卡"`
+	LevelNumber  string      `json:"关数"`
+	LevelMode    string      `json:"模式"`
+	Attack       string      `json:"攻击"`
+	HP           string      `json:"生命"`
+	Defense      string      `json:"防御"`
+	Matching     string      `json:"对谱"`
+	MatchingBuff string      `json:"对谱加成"`
+	CritRate     string      `json:"暴击"`
+	CritDmg      string      `json:"暴伤"`
+	EnergyRegen  string      `json:"加速回能"`
+	WeakenBoost  string      `json:"虚弱增伤"`
+	OathBoost    string      `json:"誓约增伤"`
+	OathRegen    string      `json:"誓约回能"`
+	TotalLevel   string      `json:"卡总等级"`
+	Note         string      `json:"备注"`
+	Companion    string      `json:"搭档身份"`
+	SetCard      string      `json:"日卡"`
+	Stage        string      `json:"阶数"`
+	Weapon       string      `json:"武器"`
+	Buff         string      `json:"加成"`
+	Time         string      `json:"时间"`
+	StarRank     string      `json:"星级"`
+	CombatPower  CombatPower `json:"战力值"`
+	Deleted      bool        `json:"deleted"`
 }
 
 type Records []Record
@@ -107,8 +108,8 @@ func (r Record) validateCommon() (bool, error) {
 		return false, fmt.Errorf("武器错误: %s", r.Weapon)
 	}
 
-	if !r.validatePartnerSetCard() {
-		return false, fmt.Errorf("搭档身份与日卡不匹配: %s - %s", r.Partner, r.SetCard)
+	if !r.validateCompanionSetCard() {
+		return false, fmt.Errorf("搭档身份与日卡不匹配: %s - %s", r.Companion, r.SetCard)
 	}
 
 	if r.SetCard == "无套装" && r.Stage != "无套装" {
@@ -219,15 +220,15 @@ func (r Record) validateDefence() (bool, error) {
 		return false, fmt.Errorf("防御值错误: %s", r.Defense)
 	}
 
-	defencePartner := map[string]bool{
+	defenceCompanions := map[string]bool{
 		"光猎":         true,
 		"永恒先知":     true,
 		"远空执舰官":   true,
 		"利莫里亚海神": true,
 	}
 
-	if _, ok := defencePartner[r.Partner]; ok && n == 0 {
-		return false, fmt.Errorf("搭档 %s 的防御值不能为 0", r.Partner)
+	if _, ok := defenceCompanions[r.Companion]; ok && n == 0 {
+		return false, fmt.Errorf("搭档 %s 的防御值不能为 0", r.Companion)
 	}
 
 	return true, nil
@@ -243,14 +244,14 @@ func (r Record) validateHP() (bool, error) {
 		return false, fmt.Errorf("生命值错误: %s", r.HP)
 	}
 
-	hpPartner := map[string]bool{
+	hpCompanions := map[string]bool{
 		"潮汐之神": true,
 		"深渊主宰": true,
 		"暗蚀国王": true,
 	}
 
-	if _, ok := hpPartner[r.Partner]; ok && n == 0 {
-		return false, fmt.Errorf("搭档 %s 的生命值不能为 0", r.Partner)
+	if _, ok := hpCompanions[r.Companion]; ok && n == 0 {
+		return false, fmt.Errorf("搭档 %s 的生命值不能为 0", r.Companion)
 	}
 
 	return true, nil
@@ -301,14 +302,14 @@ func (r Record) validateBuff() bool {
 	return validBuffs[r.Buff]
 }
 
-func (r Record) validatePartnerSetCard() bool {
-	partnerMap := partnerIdentityMap()
+func (r Record) validateCompanionSetCard() bool {
+	partnerMap := partnerCompanionMap()
 	setCardMap := partnerSetCardMap()
 
-	for mainChar, partners := range partnerMap {
-		for _, partner := range partners {
-			if partner == r.Partner {
-				if setCards, exists := setCardMap[mainChar]; exists {
+	for partner, companions := range partnerMap {
+		for _, companion := range companions {
+			if companion == r.Companion {
+				if setCards, exists := setCardMap[partner]; exists {
 					return setCards[r.SetCard]
 				}
 				return false
@@ -333,15 +334,15 @@ func (r Record) validatePartnerAndLevelType() bool {
 		return true
 	}
 
-	partnerMap := partnerIdentityMap()
+	partnerCompanionsMap := partnerCompanionMap()
 
 	// Find which main character this partner belongs to
-	var mainChar string
+	var partner string
 	found := false
-	for mc, partners := range partnerMap {
-		for _, partner := range partners {
-			if partner == r.Partner {
-				mainChar = mc
+	for pn, companions := range partnerCompanionsMap {
+		for _, companion := range companions {
+			if companion == r.Companion {
+				partner = pn
 				found = true
 				break
 			}
@@ -356,7 +357,7 @@ func (r Record) validatePartnerAndLevelType() bool {
 	}
 
 	// Check if partner matches required main character for this level type
-	if mainChar != requiredMain {
+	if partner != requiredMain {
 		return false
 	}
 
@@ -518,7 +519,7 @@ func (r Record) ValidateOrbit() (bool, error) {
 	//}
 
 	if !r.validatePartnerAndLevelType() {
-		return false, fmt.Errorf("搭档身份与关卡类型不匹配: %s - %s", r.Partner, r.LevelType)
+		return false, fmt.Errorf("搭档身份与关卡类型不匹配: %s - %s", r.Companion, r.LevelType)
 	}
 
 	return r.validateCommon()
@@ -536,7 +537,7 @@ func (r Record) GetHash() string {
 	data := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
 		r.LevelType, r.LevelNumber, r.LevelMode, r.Attack, r.HP, r.Defense, r.Matching, r.MatchingBuff,
 		r.CritRate, r.CritDmg, r.EnergyRegen, r.WeakenBoost, r.OathBoost,
-		r.OathRegen, r.Partner, r.SetCard, r.Stage, r.Weapon, r.Buff, r.TotalLevel, r.StarRank,
+		r.OathRegen, r.Companion, r.SetCard, r.Stage, r.Weapon, r.Buff, r.TotalLevel, r.StarRank,
 	)
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
@@ -593,7 +594,7 @@ func partnerSetCardMap() map[string]map[string]bool {
 	}
 }
 
-func partnerIdentityMap() map[string][]string {
+func partnerCompanionMap() map[string][]string {
 	return map[string][]string{
 		"沈星回": {"暗蚀国王", "光猎", "逐光骑士", "遥远少年", "Evol特警", "深空猎人"},
 		"黎深":   {"九黎司命", "永恒先知", "极地军医", "黎明抹杀者", "临空医生"},
@@ -635,7 +636,7 @@ func (r Record) ToStats() Stats {
 		OathBoost:    oathBoost,
 		OathRegen:    oathRegen,
 		TotalLevel:   totalLevel,
-		Partner:      r.Partner,
+		Companion:    r.Companion,
 		SetCard:      r.SetCard,
 		Stage:        r.Stage,
 		Weapon:       r.Weapon,

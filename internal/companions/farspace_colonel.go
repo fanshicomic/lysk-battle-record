@@ -1,4 +1,4 @@
-package partners
+package companions
 
 import (
 	"lysk-battle-record/internal/models"
@@ -11,7 +11,7 @@ func (p FarspaceColonel) GetName() string {
 	return "远空执舰官"
 }
 
-func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p FarspaceColonel) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	lightAttack := p.GetLightAttack(stats)
 	lightAttackSecondPeriod := p.GetLightAttackSecondPeriod(stats)
@@ -24,10 +24,10 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	fireAltSkill := p.GetFireAltSkill(stats)
 
 	if stats.Weapon != "专武" {
-		return models.PartnerFlow{
-			Periods: []models.PartnerPeriod{
+		return models.CompanionFlow{
+			Periods: []models.CompanionPeriod{
 				{
-					SkillSet: models.PartnerSkillSet{
+					SkillSet: models.CompanionSkillSet{
 						Skills: []models.Skill{
 							activeSkill,
 							heavyAttack,
@@ -43,8 +43,8 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 
 	// 阵地外
 	activeSkill.Count -= 1
-	firstPeriod := models.PartnerPeriod{
-		SkillSet: models.PartnerSkillSet{
+	firstPeriod := models.CompanionPeriod{
+		SkillSet: models.CompanionSkillSet{
 			Skills: []models.Skill{
 				activeSkill,
 				lightAttack,
@@ -66,8 +66,8 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 	if stats.Weapon != "专武" {
 		weakenRate = 0
 	}
-	secondPeriod := models.PartnerPeriod{
-		SkillSet: models.PartnerSkillSet{
+	secondPeriod := models.CompanionPeriod{
+		SkillSet: models.CompanionSkillSet{
 			Skills: []models.Skill{
 				activeSkill,
 				heavyAttack,
@@ -83,8 +83,8 @@ func (p FarspaceColonel) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 		Boost:      float64(boost),
 	}
 
-	return models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	return models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			firstPeriod,
 			secondPeriod,
 		},

@@ -1,4 +1,4 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
@@ -8,7 +8,7 @@ func (p MasterOfFate) GetName() string {
 	return "九黎司命"
 }
 
-func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p MasterOfFate) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -22,10 +22,10 @@ func (p MasterOfFate) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 		weakenRate *= 1.1
 	}
 
-	flow := models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	flow := models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
 						heavyAttack,

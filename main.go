@@ -1,6 +1,7 @@
 package main
 
 import (
+	"lysk-battle-record/internal/estimator"
 	"os"
 	"time"
 
@@ -21,11 +22,12 @@ const (
 )
 
 func main() {
+	cpEstimator := estimator.NewCombatPowerEstimator()
 	orbitGoogleSheetClient := sheet_clients.NewRecordSheetClient(spreadsheetID, orbitSheetName)
-	orbitRecordStore := datastores.NewInMemoryRecordStore(orbitGoogleSheetClient)
+	orbitRecordStore := datastores.NewInMemoryRecordStore(orbitGoogleSheetClient, cpEstimator)
 
 	championshipsGoogleSheetClient := sheet_clients.NewRecordSheetClient(spreadsheetID, championSheetName)
-	championshipsRecordStore := datastores.NewInMemoryRecordStore(championshipsGoogleSheetClient)
+	championshipsRecordStore := datastores.NewInMemoryRecordStore(championshipsGoogleSheetClient, cpEstimator)
 
 	userGoogleSheetClient := sheet_clients.NewUserSheetClient(spreadsheetID, userSheetName)
 	userStore := datastores.NewInMemoryUserStore(userGoogleSheetClient)

@@ -1,4 +1,4 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
@@ -8,7 +8,7 @@ func (p AbyssWalker) GetName() string {
 	return "深海潜行者"
 }
 
-func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p AbyssWalker) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -39,10 +39,10 @@ func (p AbyssWalker) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
 
 	weakenRate := getWeakenRate(stats.Matching)
 
-	flow := models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	flow := models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
 						heavyAttack,

@@ -2,11 +2,13 @@ package datastores
 
 import (
 	"errors"
+	"lysk-battle-record/internal/estimator"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
+
 	"lysk-battle-record/internal/models"
 	"lysk-battle-record/internal/sheet_clients"
 )
@@ -29,6 +31,7 @@ type InMemoryRecordStore struct {
 	recordsHash    map[string]bool
 	ingestPoolHash map[string]bool
 	sheetClient    sheet_clients.RecordSheetClient
+	cpEstimator    estimator.CombatPowerEstimator
 	ranking        []models.RankingItem
 }
 
@@ -47,9 +50,10 @@ type QueryResult struct {
 	Records []models.Record `json:"records"`
 }
 
-func NewInMemoryRecordStore(sheetClient sheet_clients.RecordSheetClient) *InMemoryRecordStore {
+func NewInMemoryRecordStore(sheetClient sheet_clients.RecordSheetClient, cpEstimator estimator.CombatPowerEstimator) *InMemoryRecordStore {
 	store := &InMemoryRecordStore{
 		sheetClient:    sheetClient,
+		cpEstimator:    cpEstimator,
 		ingestPoolHash: make(map[string]bool),
 	}
 	go store.autoRefresh()
@@ -72,6 +76,7 @@ func (s *InMemoryRecordStore) refresh() {
 
 	contribution := map[string]int32{}
 	for _, record := range data {
+		record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 		if len(record.UserID) > 0 && record.UserID != "<nil>" {
 			contribution[record.UserID] += 1
 		}
@@ -156,6 +161,7 @@ func (s *InMemoryRecordStore) Insert(record models.Record) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 	s.records = append(s.records, record)
 	delete(s.ingestPoolHash, record.GetHash())
 }
@@ -200,6 +206,7 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 			if r.Deleted {
 				return errors.New("cannot update a deleted record")
 			}
+			record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 			s.records[i] = record
 			break
 		}
@@ -275,7 +282,7 @@ func getFilters(key, value string) func(models.Record) bool {
 		case "模式":
 			return r.LevelMode == value
 		case "搭档身份":
-			return r.Partner == value
+			return r.Companion == value
 		case "日卡":
 			return r.SetCard == value
 		case "阶数":

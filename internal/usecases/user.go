@@ -185,3 +185,13 @@ func (s *LyskServer) UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func (s *LyskServer) populateNicknameForRecords(records []models.Record) {
+	for i, record := range records {
+		if record.UserID != "" {
+			if user, ok := s.userStore.Get(record.UserID); ok {
+				records[i].Nickname = user.Nickname
+			}
+		}
+	}
+}

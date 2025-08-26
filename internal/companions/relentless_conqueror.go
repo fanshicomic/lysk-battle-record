@@ -1,4 +1,4 @@
-package partners
+package companions
 
 import "lysk-battle-record/internal/models"
 
@@ -8,7 +8,7 @@ func (p RelentLessConqueror) GetName() string {
 	return "无尽掠夺者"
 }
 
-func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFlow {
+func (p RelentLessConqueror) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
 	heavyAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
@@ -22,10 +22,10 @@ func (p RelentLessConqueror) GetPartnerFlow(stats models.Stats) models.PartnerFl
 		boost = 80
 	}
 
-	flow := models.PartnerFlow{
-		Periods: []models.PartnerPeriod{
+	flow := models.CompanionFlow{
+		Periods: []models.CompanionPeriod{
 			{
-				SkillSet: models.PartnerSkillSet{
+				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
 						heavyAttack,
