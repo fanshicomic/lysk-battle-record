@@ -75,8 +75,8 @@ func (s *InMemoryRecordStore) refresh() {
 	}
 
 	contribution := map[string]int32{}
-	for _, record := range data {
-		record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
+	for i, record := range data {
+		data[i].CombatPower = s.cpEstimator.EstimateCombatPower(record)
 		if len(record.UserID) > 0 && record.UserID != "<nil>" {
 			contribution[record.UserID] += 1
 		}

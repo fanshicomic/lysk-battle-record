@@ -27,8 +27,8 @@ func (e *LyskCPEstimator) EstimateCombatPower(record models.Record) models.Comba
 	applySetCardBuff(&flow, setCardBuff)
 
 	score := estimate(stats, flow)
-	printCompanionFlow(flow)
-	fmt.Printf("Final Score: %+v\n", score)
+	//printCompanionFlow(flow)
+	//fmt.Printf("Final Score: %+v\n", score)
 	return score
 }
 
