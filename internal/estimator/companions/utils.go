@@ -53,6 +53,7 @@ func getBasicAttackForWeapon(weapon string) models.Skill {
 	case "单手剑":
 		heavyAttack.Base = 250
 		heavyAttack.AttackRate = 333
+		heavyAttack.Count = 25
 		heavyAttack.DamageBoost = 14
 	case "法杖":
 		heavyAttack.Base = 122
