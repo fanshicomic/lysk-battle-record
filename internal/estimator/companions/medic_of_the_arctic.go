@@ -39,8 +39,10 @@ func (p MedicOfTheArctic) GetCompanionFlow(stats models.Stats) models.CompanionF
 func (p MedicOfTheArctic) GetActiveSkill(stats models.Stats) models.Skill {
 	stats.EnergyRegen += 24
 	energy := stats.GetEnergy()
+	energy += 1
 	skill := getActiveSkillForWeapon(stats.Weapon, energy)
 	skill.DamageBoost = 40 * 8.0 / 15.0
+	skill.WeakenBoost = 34 // 军医破斩调参，应该有多一个破斩在虚弱期
 	return skill
 }
 
