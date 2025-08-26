@@ -44,10 +44,10 @@ func (p Foreseer) GetActiveSkill(stats models.Stats) models.Skill {
 
 	if stats.Weapon == "专武" {
 		skill := getDefaultActiveSkill()
-		skill.Base = 52
-		skill.AttackRate = 28
-		skill.DefenseRate = 111
-		skill.Count = (energy - 8) * 6
+		skill.Base = 52 * 6
+		skill.AttackRate = 28 * 6
+		skill.DefenseRate = 111 * 6
+		skill.Count = energy - 8
 		return skill
 	}
 

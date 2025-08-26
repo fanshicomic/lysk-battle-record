@@ -14,10 +14,11 @@ func (c LightSeeking) GetSetCardBuff() map[string]models.StageBuff {
 			Buffs: map[string]models.SkillBuff{
 				"所有":       {DamageBoost: 16},
 				"主动":       {DamageBoost: 25, CountBonus: 1.4},
-				"重剑主动":   {DamageBoost: 25},
-				"单手剑主动": {DamageBoost: 25},
-				"法杖主动":   {DamageBoost: 25},
-				"手枪主动":   {DamageBoost: 25},
+				"溯光共鸣":   {CountBonus: 1.4},
+				"重剑主动":   {DamageBoost: 25}, // remove extra count cos of attack pattern
+				"单手剑主动": {DamageBoost: 25, CountBonus: 1.4},
+				"法杖主动":   {DamageBoost: 25, CountBonus: 1.4},
+				"手枪主动":   {DamageBoost: 25, CountBonus: 1.4},
 			},
 		},
 		"III": {

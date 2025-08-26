@@ -3,9 +3,9 @@ package estimator
 import (
 	"fmt"
 
-	"lysk-battle-record/internal/companions"
+	"lysk-battle-record/internal/estimator/companions"
+	"lysk-battle-record/internal/estimator/set_cards"
 	"lysk-battle-record/internal/models"
-	"lysk-battle-record/internal/set_cards"
 )
 
 type CombatPowerEstimator interface {
@@ -20,44 +20,45 @@ func NewCombatPowerEstimator() CombatPowerEstimator {
 
 func (e *LyskCPEstimator) EstimateCombatPower(record models.Record) models.CombatPower {
 	stats := record.ToStats()
-	companionFlow := getCompanionFlow(stats)
+	myCompanion := getCompanion(stats)
+	flow := myCompanion.GetCompanionFlow(stats)
 	setCard := getSetCard(stats)
-	setCardBuff := setCard.GetSetCardBuff()[stats.Stage]
-	applySetCardBuff(&companionFlow, setCardBuff)
+	setCardBuff := getSetCardBuff(stats, setCard)
+	applySetCardBuff(&flow, setCardBuff)
 
-	score := estimate(stats, companionFlow)
-	printCompanionFlow(companionFlow)
+	score := estimate(stats, flow)
+	printCompanionFlow(flow)
 	fmt.Printf("Final Score: %+v\n", score)
 	return score
 }
 
-func getCompanionFlow(stats models.Stats) models.CompanionFlow {
-	var companion companions.Companion
+func getCompanion(stats models.Stats) companions.Companion {
 	switch stats.Companion {
 	case "逐光骑士":
-		companion = companions.LightSeeker{}
+		return companions.LightSeeker{}
 	case "永恒先知":
-		companion = companions.Foreseer{}
+		return companions.Foreseer{}
 	case "深海潜行者":
-		companion = companions.AbyssWalker{}
+		return companions.AbyssWalker{}
 	case "潮汐之神":
-		companion = companions.GodOfTheTides{}
+		return companions.GodOfTheTides{}
 	case "光猎":
-		companion = companions.Lumiere{}
+		return companions.Lumiere{}
 	case "九黎司命":
-		companion = companions.MasterOfFate{}
+		return companions.MasterOfFate{}
 	case "无尽掠夺者":
-		companion = companions.RelentLessConqueror{}
+		return companions.RelentLessConqueror{}
 	case "深渊主宰":
-		companion = companions.AbysmSovereign{}
+		return companions.AbysmSovereign{}
 	case "远空执舰官":
-		companion = companions.FarspaceColonel{}
+		return companions.FarspaceColonel{}
 	case "终极兵器X-02":
-		companion = companions.UltimateWeaponX02{}
+		return companions.UltimateWeaponX02{}
+	case "极地军医":
+		return companions.MedicOfTheArctic{}
 	default:
-		companion = companions.AbysmSovereign{}
+		return companions.AbysmSovereign{}
 	}
-	return companion.GetCompanionFlow(stats)
 }
 
 func getSetCard(stats models.Stats) set_cards.SetCard {
@@ -89,11 +90,36 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 	return setCard
 }
 
-func applySetCardBuff(flow *models.CompanionFlow, setCardBuff models.StageBuff) {
+func getSetCardBuff(stats models.Stats, setCard set_cards.SetCard) models.StageBuff {
+	setMap := map[string]string{
+		"逐光骑士":     "逐光",
+		"永恒先知":     "永恒",
+		"深海潜行者":   "深海",
+		"潮汐之神":     "神殿",
+		"光猎":         "末夜",
+		"九黎司命":     "拥雪",
+		"无尽掠夺者":   "掠心",
+		"深渊主宰":     "深渊",
+		"远空执舰官":   "远空",
+		"终极兵器X-02": "寂路",
+	}
+	var setCardBuff models.StageBuff
+	if setCard.GetName() == setMap[stats.Companion] {
+		setCardBuff = setCard.GetSetCardBuff()[stats.Stage]
+	} else if setCard.GetName() != "无套装" {
+		setCardBuff = set_cards.GetDefaultCardBuff()[stats.Stage]
+	} else {
+		setCardBuff = set_cards.NoSet{}.GetSetCardBuff()[stats.Stage]
+	}
+
+	return setCardBuff
+}
+
+func applySetCardBuff(flow *models.CompanionFlow, buff models.StageBuff) {
 	for periodIdx := range flow.Periods {
 		period := &flow.Periods[periodIdx]
 		for i, skill := range period.SkillSet.Skills {
-			if allBuff, exists := setCardBuff.Buffs["所有"]; exists {
+			if allBuff, exists := buff.Buffs["所有"]; exists {
 				skill.CritRate += allBuff.CritRate
 				skill.CritDmg += allBuff.CritDmg
 				skill.WeakenBoost += allBuff.WeakenBoost
@@ -104,7 +130,7 @@ func applySetCardBuff(flow *models.CompanionFlow, setCardBuff models.StageBuff) 
 				}
 			}
 
-			if skillBuff, exists := setCardBuff.Buffs[skill.Name]; exists {
+			if skillBuff, exists := buff.Buffs[skill.Name]; exists {
 				skill.CritRate += skillBuff.CritRate
 				skill.CritDmg += skillBuff.CritDmg
 				skill.WeakenBoost += skillBuff.WeakenBoost

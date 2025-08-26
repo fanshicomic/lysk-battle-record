@@ -77,15 +77,15 @@ type StageBuff struct {
 }
 
 func (s Stats) GetEnergy() int {
-	energy := 8
+	energy := 9
 	if s.EnergyRegen >= 39.6 {
-		energy = 12
+		energy += 4
 	} else if s.EnergyRegen >= 30 {
-		energy = 11
+		energy += 3
 	} else if s.EnergyRegen >= 10.8 {
-		energy = 10
+		energy += 2
 	} else if s.EnergyRegen >= 6 {
-		energy = 9
+		energy += 1
 	}
 
 	if s.Stage == "III" || s.Stage == "IV" {

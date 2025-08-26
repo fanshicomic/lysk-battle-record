@@ -10,7 +10,7 @@ func (p DefaultCompanion) GetName() string {
 
 func (p DefaultCompanion) GetCompanionFlow(stats models.Stats) models.CompanionFlow {
 	activeSkill := p.GetActiveSkill(stats)
-	heavyAttack := p.GetBasicAttack(stats)
+	basicAttack := p.GetBasicAttack(stats)
 	resonanceSkill := p.GetResonanceSkill(stats)
 	oathSkill := p.GetOathSkill(stats)
 	supportSkill := p.GetSupportSkill(stats)
@@ -23,7 +23,7 @@ func (p DefaultCompanion) GetCompanionFlow(stats models.Stats) models.CompanionF
 				SkillSet: models.CompanionSkillSet{
 					Skills: []models.Skill{
 						activeSkill,
-						heavyAttack,
+						basicAttack,
 						resonanceSkill,
 						oathSkill,
 						supportSkill,

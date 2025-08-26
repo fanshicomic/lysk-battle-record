@@ -87,7 +87,7 @@ func (p AbyssWalker) GetBasicAttack(stats models.Stats) models.Skill {
 		skill := getDefaultBasicAttack()
 		skill.Base = 144
 		skill.AttackRate = 192
-		skill.Count = 35
+		skill.Count = 26
 		skill.CritRate = p.getExtraCritRate(stats)
 		return skill
 	}

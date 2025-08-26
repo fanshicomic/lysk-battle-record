@@ -1,6 +1,8 @@
 package companions
 
-import "lysk-battle-record/internal/models"
+import (
+	"lysk-battle-record/internal/models"
+)
 
 type LightSeeker struct{}
 
@@ -47,7 +49,7 @@ func (p LightSeeker) GetActiveSkill(stats models.Stats) models.Skill {
 		skill := getDefaultActiveSkill()
 		skill.Base = 341
 		skill.AttackRate = 455
-		skill.Count = (energy - 8) * 2
+		skill.Count = int(float64(energy-8) * 1.43)
 		return skill
 	}
 
@@ -59,7 +61,7 @@ func (p LightSeeker) GetBasicAttack(stats models.Stats) models.Skill {
 		skill := getDefaultBasicAttack()
 		skill.Base = 118
 		skill.AttackRate = 157
-		skill.Count = 30
+		skill.Count = 25
 		return skill
 	}
 
@@ -96,7 +98,7 @@ func (p LightSeeker) GetPassiveSkill(stats models.Stats) models.Skill {
 		Name:       "溯光共鸣",
 		Base:       150,
 		AttackRate: 200,
-		Count:      int(float64(activeSKillCount) * 0.8),
+		Count:      activeSKillCount,
 		CanBeCrit:  true,
 	}
 

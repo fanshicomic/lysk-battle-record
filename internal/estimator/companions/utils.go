@@ -19,7 +19,7 @@ func getActiveSkillForWeapon(weapon string, energy int) models.Skill {
 		activeSkill.Base = 621
 		activeSkill.AttackRate = 829
 		activeSkill.DamageBoost = 50
-		activeSkill.Count = int(math.Min(float64(energy-8), 5))
+		activeSkill.Count = int(math.Min(float64(energy-8), 6))
 	case "单手剑":
 		activeSkill.Name = "单手剑主动"
 		activeSkill.Base = 341
@@ -48,8 +48,8 @@ func getBasicAttackForWeapon(weapon string) models.Skill {
 	case "重剑":
 		heavyAttack.Base = 337
 		heavyAttack.AttackRate = 449
-		heavyAttack.DamageBoost = 12.9
-		heavyAttack.Count = 10
+		heavyAttack.DamageBoost = 26
+		heavyAttack.Count = 11
 	case "单手剑":
 		heavyAttack.Base = 250
 		heavyAttack.AttackRate = 333
