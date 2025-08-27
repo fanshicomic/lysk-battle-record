@@ -291,7 +291,7 @@ func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
 	}
 
 	if len(sameLevelRecords) < 5 {
-		return ""
+		return "标准"
 	}
 
 	buffedScores := []int{}
