@@ -302,14 +302,14 @@ func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
 	}
 
 	if len(buffedScores) < 5 {
-		return ""
+		return "标准"
 	}
 
 	sort.Ints(buffedScores)
 
 	recordBuffedScore, err := strconv.Atoi(record.CombatPower.BuffedScore)
 	if err != nil {
-		return ""
+		return "标准"
 	}
 
 	q1Index := len(buffedScores) / 4
