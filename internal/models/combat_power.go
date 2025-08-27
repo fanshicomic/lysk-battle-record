@@ -9,6 +9,7 @@ type CombatPower struct {
 	BuffedScore    string
 	WeakenScore    string
 	NonWeakenScore string
+	Evaluation     string
 }
 
 type Stats struct {

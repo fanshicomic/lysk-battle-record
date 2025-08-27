@@ -4,6 +4,7 @@ import (
 	"errors"
 	"lysk-battle-record/internal/estimator"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -149,6 +150,7 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 
 	res = res.SortByTimeDesc()
 	res = res.Pagination(opt.Offset, opt.Limit)
+	res = s.populateEvaluation(res)
 
 	return QueryResult{
 		Total:   count,
@@ -270,6 +272,65 @@ func (s *InMemoryRecordStore) GetRanking(userId string) []models.RankingItem {
 	}
 
 	return result
+}
+
+func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	sameLevelRecords := []models.Record{}
+	for _, r := range s.records {
+		if !r.Deleted &&
+			r.LevelType == record.LevelType &&
+			r.LevelNumber == record.LevelNumber &&
+			r.LevelMode == record.LevelMode &&
+			r.CombatPower.BuffedScore != "" &&
+			r.CombatPower.BuffedScore != models.NoData {
+			sameLevelRecords = append(sameLevelRecords, r)
+		}
+	}
+
+	if len(sameLevelRecords) < 5 {
+		return ""
+	}
+
+	buffedScores := []int{}
+	for _, r := range sameLevelRecords {
+		if score, err := strconv.Atoi(r.CombatPower.BuffedScore); err == nil {
+			buffedScores = append(buffedScores, score)
+		}
+	}
+
+	if len(buffedScores) < 5 {
+		return ""
+	}
+
+	sort.Ints(buffedScores)
+
+	recordBuffedScore, err := strconv.Atoi(record.CombatPower.BuffedScore)
+	if err != nil {
+		return ""
+	}
+
+	q1Index := len(buffedScores) / 4
+	q3Index := (3 * len(buffedScores)) / 4
+	q1 := buffedScores[q1Index]
+	q3 := buffedScores[q3Index]
+
+	if recordBuffedScore >= q3 {
+		return "溢出"
+	} else if recordBuffedScore <= q1 {
+		return "极限"
+	} else {
+		return "标准"
+	}
+}
+
+func (s *InMemoryRecordStore) populateEvaluation(records []models.Record) []models.Record {
+	for i, r := range records {
+		records[i].CombatPower.Evaluation = s.evaluateRecord(r)
+	}
+	return records
 }
 
 func getFilters(key, value string) func(models.Record) bool {
