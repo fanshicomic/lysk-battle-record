@@ -95,8 +95,10 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Mistsea{}
 	case "夜誓":
 		setCard = set_cards.Nightvow{}
-	default:
+	case "无套装":
 		setCard = set_cards.NoSet{}
+	default:
+		setCard = set_cards.FourStar{}
 	}
 	return setCard
 }
