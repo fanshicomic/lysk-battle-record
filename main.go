@@ -61,6 +61,7 @@ func main() {
 
 	r.GET("/ping", server.Ping)
 	r.POST("/login", server.Login)
+	r.POST("/analyze", server.AnalyzeCombatPower)
 
 	authRequired := r.Group("/")
 	authRequired.Use(server.AuthMiddleware())

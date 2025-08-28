@@ -2,7 +2,6 @@ package datastores
 
 import (
 	"errors"
-	"lysk-battle-record/internal/estimator"
 	"sort"
 	"strconv"
 	"sync"
@@ -10,8 +9,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"lysk-battle-record/internal/estimator"
 	"lysk-battle-record/internal/models"
 	"lysk-battle-record/internal/sheet_clients"
+	"lysk-battle-record/internal/utils"
 )
 
 type RecordStore interface {
@@ -24,6 +25,7 @@ type RecordStore interface {
 	PrepareInsert(record models.Record) error
 	IsDuplicate(record models.Record) bool
 	GetRanking(userId string) []models.RankingItem
+	EvaluateRecord(record models.Record) string
 }
 
 type InMemoryRecordStore struct {
@@ -274,11 +276,19 @@ func (s *InMemoryRecordStore) GetRanking(userId string) []models.RankingItem {
 	return result
 }
 
-func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
+func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	sameLevelRecords := []models.Record{}
+
+	// Check if this is a championships record
+	isChampionships := record.LevelType == "A4" || record.LevelType == "B4" || record.LevelType == "C4"
+	var start, end time.Time
+	if isChampionships {
+		start, end = utils.GetCurrentChampionshipsRound()
+	}
+
 	for _, r := range s.records {
 		if !r.Deleted &&
 			r.LevelType == record.LevelType &&
@@ -286,6 +296,15 @@ func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
 			r.LevelMode == record.LevelMode &&
 			r.CombatPower.BuffedScore != "" &&
 			r.CombatPower.BuffedScore != models.NoData {
+
+			// For championships records, filter by current round time
+			if isChampionships {
+				recordTime, err := time.Parse(time.RFC3339, r.Time)
+				if err != nil || recordTime.Before(start) || recordTime.After(end) {
+					continue
+				}
+			}
+
 			sameLevelRecords = append(sameLevelRecords, r)
 		}
 	}
@@ -328,7 +347,7 @@ func (s *InMemoryRecordStore) evaluateRecord(record models.Record) string {
 
 func (s *InMemoryRecordStore) populateEvaluation(records []models.Record) []models.Record {
 	for i, r := range records {
-		records[i].CombatPower.Evaluation = s.evaluateRecord(r)
+		records[i].CombatPower.Evaluation = s.EvaluateRecord(r)
 	}
 	return records
 }

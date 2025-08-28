@@ -37,4 +37,7 @@ type Server interface {
 	UpdateUser(c *gin.Context)
 
 	GetRanking(c *gin.Context)
+
+	// Analysis
+	AnalyzeCombatPower(c *gin.Context)
 }

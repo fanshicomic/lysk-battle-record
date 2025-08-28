@@ -11,34 +11,16 @@ import (
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/models"
 	"lysk-battle-record/internal/pkg"
+	"lysk-battle-record/internal/utils"
 )
 
 // All Championships Records
-
-func getCurrentChampionshipsRound() (time.Time, time.Time) {
-	// The first round started on 2025 June 02
-	firstRoundStartDate := time.Date(2025, time.June, 2, 0, 0, 0, 0, time.UTC)
-	// One round of championships last for 2 weeks
-	roundDuration := 14 * 24 * time.Hour
-
-	// Calculate the time elapsed since the first round
-	elapsed := time.Now().UTC().Sub(firstRoundStartDate)
-	// Calculate the number of rounds that have passed
-	roundsPassed := int(elapsed / roundDuration)
-
-	// Calculate the start date of the current round
-	currentRoundStartDate := firstRoundStartDate.Add(time.Duration(roundsPassed) * roundDuration)
-	// Calculate the end date of the current round
-	currentRoundEndDate := currentRoundStartDate.Add(roundDuration)
-
-	return currentRoundStartDate, currentRoundEndDate
-}
 
 func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 	level := c.Query("level")
 	offsetStr := c.DefaultQuery("offset", "0")
 	offset, _ := strconv.Atoi(offsetStr)
-	start, end := getCurrentChampionshipsRound()
+	start, end := utils.GetCurrentChampionshipsRound()
 
 	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Filters: map[string]string{
@@ -53,7 +35,7 @@ func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
 }
 
 func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
-	start, end := getCurrentChampionshipsRound()
+	start, end := utils.GetCurrentChampionshipsRound()
 	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
 		Limit:     5,
 		TimeStart: start,
