@@ -3,14 +3,19 @@ package utils
 import "time"
 
 func GetCurrentChampionshipsRound() (time.Time, time.Time) {
-	firstRoundStartDate := time.Date(2025, time.June, 2, 0, 0, 0, 0, time.UTC)
+	return GetChampionshipsRoundByTime(time.Now())
+}
+
+func GetChampionshipsRoundByTime(targetTime time.Time) (time.Time, time.Time) {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	firstRoundStartDate := time.Date(2025, time.June, 2, 0, 0, 0, 0, loc)
 	roundDuration := 14 * 24 * time.Hour
 
-	elapsed := time.Now().UTC().Sub(firstRoundStartDate)
+	elapsed := targetTime.In(loc).Sub(firstRoundStartDate)
 	roundsPassed := int(elapsed / roundDuration)
 
-	currentRoundStartDate := firstRoundStartDate.Add(time.Duration(roundsPassed) * roundDuration)
-	currentRoundEndDate := currentRoundStartDate.Add(roundDuration)
+	roundStartDate := firstRoundStartDate.Add(time.Duration(roundsPassed) * roundDuration)
+	roundEndDate := roundStartDate.Add(roundDuration)
 
-	return currentRoundStartDate, currentRoundEndDate
+	return roundStartDate, roundEndDate
 }

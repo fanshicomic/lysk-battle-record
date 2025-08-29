@@ -284,9 +284,13 @@ func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
 
 	// Check if this is a championships record
 	isChampionships := record.LevelType == "A4" || record.LevelType == "B4" || record.LevelType == "C4"
+	recordTime, err := time.Parse(time.RFC3339, record.Time)
+	if err != nil {
+		recordTime = time.Now()
+	}
 	var start, end time.Time
 	if isChampionships {
-		start, end = utils.GetCurrentChampionshipsRound()
+		start, end = utils.GetChampionshipsRoundByTime(recordTime)
 	}
 
 	for _, r := range s.records {
@@ -299,8 +303,7 @@ func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
 
 			// For championships records, filter by current round time
 			if isChampionships {
-				recordTime, err := time.Parse(time.RFC3339, r.Time)
-				if err != nil || recordTime.Before(start) || recordTime.After(end) {
+				if recordTime.Before(start) || recordTime.After(end) {
 					continue
 				}
 			}
