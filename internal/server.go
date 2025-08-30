@@ -38,6 +38,6 @@ type Server interface {
 
 	GetRanking(c *gin.Context)
 
-	// Analysis
-	AnalyzeCombatPower(c *gin.Context)
+	// LevelType Suggestion
+	GetLevelSuggestion(c *gin.Context)
 }

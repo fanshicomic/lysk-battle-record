@@ -1,7 +1,6 @@
 package main
 
 import (
-	"lysk-battle-record/internal/estimator"
 	"os"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"lysk-battle-record/internal/datastores"
+	"lysk-battle-record/internal/estimator"
 	"lysk-battle-record/internal/pkg"
 	"lysk-battle-record/internal/sheet_clients"
 	"lysk-battle-record/internal/usecases"
@@ -62,6 +62,7 @@ func main() {
 	r.GET("/ping", server.Ping)
 	r.POST("/login", server.Login)
 	r.POST("/analyze", server.AnalyzeCombatPower)
+	r.GET("/level-suggestion", server.GetLevelSuggestion)
 
 	authRequired := r.Group("/")
 	authRequired.Use(server.AuthMiddleware())
