@@ -5,11 +5,11 @@ const (
 )
 
 type CombatPower struct {
-	Score          string
-	BuffedScore    string
-	WeakenScore    string
-	NonWeakenScore string
-	Evaluation     string
+	Score       string
+	BuffedScore string
+	WeakenScore string
+	CritScore   string
+	Evaluation  string
 }
 
 type Stats struct {

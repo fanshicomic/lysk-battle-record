@@ -5,11 +5,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/models"
-	"lysk-battle-record/internal/utils"
 )
 
 type CompanionSetCardPair struct {
@@ -24,6 +24,8 @@ type LevelSuggestionResponse struct {
 	LevelMode             string                 `json:"level_mode"`
 	CPs                   []int                  `json:"cps"`
 	CompanionSetCardPairs []CompanionSetCardPair `json:"companion_setcard_pairs"`
+	Crit                  int                    `json:"crit"`
+	Weak                  int                    `json:"weak"`
 }
 
 func (s *LyskServer) GetLevelCPs(records []models.Record) []int {
@@ -74,44 +76,55 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 		return
 	}
 
-	// Fetch records once
+	// Create a temporary record to use with GetLevelRecords
+	tempRecord := models.Record{
+		LevelType:   levelType,
+		LevelNumber: levelNumber,
+		LevelMode:   levelMode,
+		Time:        time.Now().Format(time.RFC3339),
+	}
+
+	// Determine which store to use
 	isChampionships := strings.Contains(levelNumber, "A4") || strings.Contains(levelNumber, "B4") || strings.Contains(levelNumber, "C4")
-
-	var queryOptions datastores.QueryOptions
 	var store datastores.RecordStore
-
 	if isChampionships {
 		store = s.championshipsRecordStore
-		start, end := utils.GetCurrentChampionshipsRound()
-		queryOptions = datastores.QueryOptions{
-			Filters: map[string]string{
-				"关卡": levelNumber,
-			},
-			TimeStart: start,
-			TimeEnd:   end,
-		}
 	} else {
 		if levelMode == "" {
 			levelMode = "稳定"
+			tempRecord.LevelMode = levelMode
 		}
-
 		store = s.orbitRecordStore
-		queryOptions = datastores.QueryOptions{
-			Filters: map[string]string{
-				"关卡": levelType,
-				"关数": levelNumber,
-				"模式": levelMode,
-			},
-		}
 	}
 
-	result := store.Query(queryOptions)
+	// Get records for the level using the optimized method
+	records := store.GetLevelRecords(tempRecord)
 
 	// Get CPs for the level using the fetched records
-	cps := s.GetLevelCPs(result.Records)
+	cps := s.GetLevelCPs(records)
 
 	// Get companion and set card pairs
-	companionSetCardPairs := s.GetCompanionSetCardPairs(result.Records)
+	companionSetCardPairs := s.GetCompanionSetCardPairs(records)
+
+	critCount := 0
+	weakCount := 0
+
+	for _, record := range records {
+		if record.CombatPower.CritScore != "" && record.CombatPower.WeakenScore != "" &&
+			record.CombatPower.CritScore != "无数据" && record.CombatPower.WeakenScore != "无数据" {
+
+			critScore, critErr := strconv.Atoi(record.CombatPower.CritScore)
+			weakenScore, weakenErr := strconv.Atoi(record.CombatPower.WeakenScore)
+
+			if critErr == nil && weakenErr == nil {
+				if critScore > weakenScore {
+					critCount++
+				} else if weakenScore > critScore {
+					weakCount++
+				}
+			}
+		}
+	}
 
 	response := LevelSuggestionResponse{
 		LevelType:             levelType,
@@ -119,6 +132,8 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 		LevelMode:             levelMode,
 		CPs:                   cps,
 		CompanionSetCardPairs: companionSetCardPairs,
+		Crit:                  critCount,
+		Weak:                  weakCount,
 	}
 
 	c.JSON(http.StatusOK, response)

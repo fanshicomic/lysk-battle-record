@@ -26,6 +26,7 @@ type RecordStore interface {
 	IsDuplicate(record models.Record) bool
 	GetRanking(userId string) []models.RankingItem
 	EvaluateRecord(record models.Record) string
+	GetLevelRecords(record models.Record) []models.Record
 }
 
 type InMemoryRecordStore struct {
@@ -36,6 +37,7 @@ type InMemoryRecordStore struct {
 	sheetClient    sheet_clients.RecordSheetClient
 	cpEstimator    estimator.CombatPowerEstimator
 	ranking        []models.RankingItem
+	levelRecords   map[string][]models.Record // New field to store records by level key
 }
 
 type QueryOptions struct {
@@ -58,6 +60,7 @@ func NewInMemoryRecordStore(sheetClient sheet_clients.RecordSheetClient, cpEstim
 		sheetClient:    sheetClient,
 		cpEstimator:    cpEstimator,
 		ingestPoolHash: make(map[string]bool),
+		levelRecords:   make(map[string][]models.Record), // Initialize the levelRecords map
 	}
 	go store.autoRefresh()
 	return store
@@ -98,9 +101,19 @@ func (s *InMemoryRecordStore) refresh() {
 		return ranking[i].Contribution > ranking[j].Contribution
 	})
 
+	// Organize records by level key for quick retrieval
+	levelRecords := make(map[string][]models.Record)
+	for _, record := range data {
+		if !record.Deleted {
+			levelKey := s.generateLevelKey(record)
+			levelRecords[levelKey] = append(levelRecords[levelKey], record)
+		}
+	}
+
 	s.mu.Lock()
 	s.records = data
 	s.ranking = ranking
+	s.levelRecords = levelRecords
 	s.mu.Unlock()
 
 	s.recordsHash = map[string]bool{}
@@ -168,6 +181,12 @@ func (s *InMemoryRecordStore) Insert(record models.Record) {
 	record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 	s.records = append(s.records, record)
 	delete(s.ingestPoolHash, record.GetHash())
+
+	// Update the levelRecords map using proper level key generation
+	if !record.Deleted {
+		levelKey := s.generateLevelKey(record)
+		s.levelRecords[levelKey] = append(s.levelRecords[levelKey], record)
+	}
 }
 
 func (s *InMemoryRecordStore) PrepareInsert(record models.Record) error {
@@ -210,8 +229,20 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 			if r.Deleted {
 				return errors.New("cannot update a deleted record")
 			}
+
 			record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 			s.records[i] = record
+
+			// Update in level bucket - find and replace by ID
+			levelKey := s.generateLevelKey(record)
+			if levelRecords, exists := s.levelRecords[levelKey]; exists {
+				for j, lr := range levelRecords {
+					if lr.Id == record.Id {
+						s.levelRecords[levelKey][j] = record
+						break
+					}
+				}
+			}
 			break
 		}
 	}
@@ -227,6 +258,17 @@ func (s *InMemoryRecordStore) Delete(record models.Record) error {
 	for i, r := range s.records {
 		if r.Id == record.Id {
 			s.records[i].Deleted = true
+
+			// Remove from the levelRecords map by finding the correct record by ID
+			levelKey := s.generateLevelKey(r)
+			if levelRecords, exists := s.levelRecords[levelKey]; exists {
+				for j, lr := range levelRecords {
+					if lr.Id == record.Id {
+						s.levelRecords[levelKey] = append(levelRecords[:j], levelRecords[j+1:]...)
+						break
+					}
+				}
+			}
 			break
 		}
 	}
@@ -276,48 +318,71 @@ func (s *InMemoryRecordStore) GetRanking(userId string) []models.RankingItem {
 	return result
 }
 
-func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
+func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Record {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	sameLevelRecords := []models.Record{}
-
-	// Check if this is a championships record
-	isChampionships := record.LevelType == "A4" || record.LevelType == "B4" || record.LevelType == "C4"
-	recordTime, err := time.Parse(time.RFC3339, record.Time)
-	if err != nil {
-		recordTime = time.Now()
+	// Create a temporary record to generate the level key
+	tempRecord := models.Record{
+		LevelType:   record.LevelType,
+		LevelNumber: record.LevelNumber,
+		LevelMode:   record.LevelMode,
+		Time:        record.Time,
 	}
+
+	levelKey := s.generateLevelKey(tempRecord)
+	levelRecords, exists := s.levelRecords[levelKey]
+	if !exists {
+		return []models.Record{}
+	}
+
+	// Filter out deleted records and apply championships time filtering if needed
+	result := []models.Record{}
+	isChampionships := record.LevelType == "A4" || record.LevelType == "B4" || record.LevelType == "C4"
 	var start, end time.Time
 	if isChampionships {
+		recordTime, err := time.Parse(time.RFC3339, record.Time)
+		if err != nil {
+			recordTime = time.Now()
+		}
 		start, end = utils.GetChampionshipsRoundByTime(recordTime)
 	}
 
-	for _, r := range s.records {
-		if !r.Deleted &&
-			r.LevelType == record.LevelType &&
-			r.LevelNumber == record.LevelNumber &&
-			r.LevelMode == record.LevelMode &&
-			r.CombatPower.BuffedScore != "" &&
-			r.CombatPower.BuffedScore != models.NoData {
+	for _, r := range levelRecords {
+		if r.Deleted {
+			continue
+		}
 
-			// For championships records, filter by current round time
-			if isChampionships {
-				if recordTime.Before(start) || recordTime.After(end) {
-					continue
-				}
+		if isChampionships {
+			rTime, err := time.Parse(time.RFC3339, r.Time)
+			if err != nil || rTime.Before(start) || rTime.After(end) {
+				continue
 			}
+		}
 
-			sameLevelRecords = append(sameLevelRecords, r)
+		result = append(result, r)
+	}
+
+	return result
+}
+
+func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
+	sameLevelRecords := s.GetLevelRecords(record)
+
+	// Filter records with valid buffed scores
+	validRecords := []models.Record{}
+	for _, r := range sameLevelRecords {
+		if r.CombatPower.BuffedScore != "" && r.CombatPower.BuffedScore != models.NoData {
+			validRecords = append(validRecords, r)
 		}
 	}
 
-	if len(sameLevelRecords) < 5 {
+	if len(validRecords) < 5 {
 		return "标准"
 	}
 
 	buffedScores := []int{}
-	for _, r := range sameLevelRecords {
+	for _, r := range validRecords {
 		if score, err := strconv.Atoi(r.CombatPower.BuffedScore); err == nil {
 			buffedScores = append(buffedScores, score)
 		}
@@ -353,6 +418,21 @@ func (s *InMemoryRecordStore) populateEvaluation(records []models.Record) []mode
 		records[i].CombatPower.Evaluation = s.EvaluateRecord(r)
 	}
 	return records
+}
+
+func (s *InMemoryRecordStore) generateLevelKey(record models.Record) string {
+	// For championships: round-leveltype
+	if record.LevelType == "A4" || record.LevelType == "B4" || record.LevelType == "C4" {
+		recordTime, err := time.Parse(time.RFC3339, record.Time)
+		if err != nil {
+			recordTime = time.Now()
+		}
+		start, _ := utils.GetChampionshipsRoundByTime(recordTime)
+		roundKey := start.Format("2006-01-02") // Use start date as round identifier
+		return roundKey + "-" + record.LevelType
+	}
+	// For orbit: leveltype-levelnumber-levelmode
+	return record.LevelType + "-" + record.LevelNumber + "-" + record.LevelMode
 }
 
 func getFilters(key, value string) func(models.Record) bool {

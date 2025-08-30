@@ -162,7 +162,7 @@ func applySetCardBuff(flow *models.CompanionFlow, buff models.StageBuff) {
 }
 
 func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.CombatPower {
-	var total, weakenScore, nonWeakenScore float64 = 0, 0, 0
+	var total, weakenScore, critScore float64 = 0, 0, 0
 	for _, period := range companionFlow.Periods {
 		var score float64 = 0
 
@@ -193,15 +193,15 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 			if skill.Name == "誓约" {
 				weakenRate = 1
 			}
-			nonWeakenSkillCount := (1 - weakenRate) * float64(skill.Count)
-			nonWeakenPeriodScore := rawSkillScore * nonWeakenSkillCount
+			critSkillCount := (1 - weakenRate) * float64(skill.Count)
+			critPeriodScore := rawSkillScore * critSkillCount
 			critRate := (stats.CritRate + skill.CritRate) / 100
 			if !skill.CanBeCrit {
 				critRate = 0
 			}
 			critDmg := (stats.CritDmg + skill.CritDmg) / 100
-			nonWeakenPeriodScore = nonWeakenPeriodScore*(1-critRate) +
-				nonWeakenPeriodScore*critRate*critDmg
+			critPeriodScore = critPeriodScore*(1-critRate) +
+				critPeriodScore*critRate*critDmg
 
 			// consider weaken period
 			weakenSkillCount := weakenRate * float64(skill.Count)
@@ -214,8 +214,8 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 			}
 			weakenPeriodScore = weakenPeriodScore * (1 + weakenBoost/100)
 
-			score += nonWeakenPeriodScore + weakenPeriodScore
-			nonWeakenScore += nonWeakenPeriodScore
+			score += critPeriodScore + weakenPeriodScore
+			critScore += critPeriodScore
 			weakenScore += weakenPeriodScore
 		}
 
@@ -228,10 +228,10 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 	buffedTotal := int(total * matchingBuff * championshipsBuff)
 
 	return models.CombatPower{
-		Score:          fmt.Sprintf("%d", int(total)),
-		BuffedScore:    fmt.Sprintf("%d", buffedTotal),
-		WeakenScore:    fmt.Sprintf("%d", int(weakenScore)),
-		NonWeakenScore: fmt.Sprintf("%d", int(nonWeakenScore)),
+		Score:       fmt.Sprintf("%d", int(total)),
+		BuffedScore: fmt.Sprintf("%d", buffedTotal),
+		WeakenScore: fmt.Sprintf("%d", int(weakenScore)),
+		CritScore:   fmt.Sprintf("%d", int(critScore)),
 	}
 }
 
