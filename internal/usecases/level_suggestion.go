@@ -23,6 +23,7 @@ type LevelSuggestionResponse struct {
 	LevelNumber           string                 `json:"level_number"`
 	LevelMode             string                 `json:"level_mode"`
 	CPs                   []int                  `json:"cps"`
+	SuggestedCP           int                    `json:"suggested_cp"`
 	CompanionSetCardPairs []CompanionSetCardPair `json:"companion_setcard_pairs"`
 	Crit                  int                    `json:"crit"`
 	Weak                  int                    `json:"weak"`
@@ -69,6 +70,25 @@ func (s *LyskServer) GetCompanionSetCardPairs(records []models.Record) []Compani
 	return pairs
 }
 
+func (s *LyskServer) GetSuggestedCP(cps []int) int {
+	if len(cps) == 0 {
+		return 0
+	}
+
+	// Sort CPs in ascending order for percentile calculation
+	sortedCPs := make([]int, len(cps))
+	copy(sortedCPs, cps)
+	sort.Ints(sortedCPs)
+
+	// Calculate 25th percentile index
+	index := int(float64(len(sortedCPs)) * 0.25)
+	if index >= len(sortedCPs) {
+		index = len(sortedCPs) - 1
+	}
+
+	return sortedCPs[index]
+}
+
 func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 	levelType, levelNumber, levelMode := c.Query("type"), c.Query("level"), c.Query("mode")
 	if levelNumber == "" {
@@ -106,6 +126,9 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 	// Get companion and set card pairs
 	companionSetCardPairs := s.GetCompanionSetCardPairs(records)
 
+	// Calculate suggested CP (25th percentile)
+	suggestedCP := s.GetSuggestedCP(cps)
+
 	critCount := 0
 	weakCount := 0
 
@@ -131,6 +154,7 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 		LevelNumber:           levelNumber,
 		LevelMode:             levelMode,
 		CPs:                   cps,
+		SuggestedCP:           suggestedCP,
 		CompanionSetCardPairs: companionSetCardPairs,
 		Crit:                  critCount,
 		Weak:                  weakCount,
