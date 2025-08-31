@@ -27,17 +27,19 @@ type RecordStore interface {
 	GetRanking(userId string) []models.RankingItem
 	EvaluateRecord(record models.Record) string
 	GetLevelRecords(record models.Record) []models.Record
+	GetCompanionCounts() map[string]int
 }
 
 type InMemoryRecordStore struct {
-	mu             sync.RWMutex
-	records        []models.Record
-	recordsHash    map[string]bool
-	ingestPoolHash map[string]bool
-	sheetClient    sheet_clients.RecordSheetClient
-	cpEstimator    estimator.CombatPowerEstimator
-	ranking        []models.RankingItem
-	levelRecords   map[string][]models.Record // New field to store records by level key
+	mu              sync.RWMutex
+	records         []models.Record
+	recordsHash     map[string]bool
+	ingestPoolHash  map[string]bool
+	sheetClient     sheet_clients.RecordSheetClient
+	cpEstimator     estimator.CombatPowerEstimator
+	ranking         []models.RankingItem
+	levelRecords    map[string][]models.Record // New field to store records by level key
+	companionCounts map[string]int             // Cache companion counts
 }
 
 type QueryOptions struct {
@@ -57,10 +59,11 @@ type QueryResult struct {
 
 func NewInMemoryRecordStore(sheetClient sheet_clients.RecordSheetClient, cpEstimator estimator.CombatPowerEstimator) *InMemoryRecordStore {
 	store := &InMemoryRecordStore{
-		sheetClient:    sheetClient,
-		cpEstimator:    cpEstimator,
-		ingestPoolHash: make(map[string]bool),
-		levelRecords:   make(map[string][]models.Record), // Initialize the levelRecords map
+		sheetClient:     sheetClient,
+		cpEstimator:     cpEstimator,
+		ingestPoolHash:  make(map[string]bool),
+		levelRecords:    make(map[string][]models.Record), // Initialize the levelRecords map
+		companionCounts: make(map[string]int),             // Initialize the companionCounts map
 	}
 	go store.autoRefresh()
 	return store
@@ -103,10 +106,17 @@ func (s *InMemoryRecordStore) refresh() {
 
 	// Organize records by level key for quick retrieval
 	levelRecords := make(map[string][]models.Record)
+	companionCounts := make(map[string]int)
+
 	for _, record := range data {
 		if !record.Deleted {
 			levelKey := s.generateLevelKey(record)
 			levelRecords[levelKey] = append(levelRecords[levelKey], record)
+
+			// Count companions
+			if record.Companion != "" {
+				companionCounts[record.Companion]++
+			}
 		}
 	}
 
@@ -114,6 +124,7 @@ func (s *InMemoryRecordStore) refresh() {
 	s.records = data
 	s.ranking = ranking
 	s.levelRecords = levelRecords
+	s.companionCounts = companionCounts
 	s.mu.Unlock()
 
 	s.recordsHash = map[string]bool{}
@@ -182,10 +193,15 @@ func (s *InMemoryRecordStore) Insert(record models.Record) {
 	s.records = append(s.records, record)
 	delete(s.ingestPoolHash, record.GetHash())
 
-	// Update the levelRecords map using proper level key generation
+	// Update the levelRecords map and companion counts
 	if !record.Deleted {
 		levelKey := s.generateLevelKey(record)
 		s.levelRecords[levelKey] = append(s.levelRecords[levelKey], record)
+
+		// Update companion counts
+		if record.Companion != "" {
+			s.companionCounts[record.Companion]++
+		}
 	}
 }
 
@@ -231,6 +247,7 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 			}
 
 			record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
+			oldCompanion := r.Companion
 			s.records[i] = record
 
 			// Update in level bucket - find and replace by ID
@@ -242,6 +259,17 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 						break
 					}
 				}
+			}
+
+			// Update companion counts
+			if oldCompanion != "" {
+				s.companionCounts[oldCompanion]--
+				if s.companionCounts[oldCompanion] <= 0 {
+					delete(s.companionCounts, oldCompanion)
+				}
+			}
+			if record.Companion != "" {
+				s.companionCounts[record.Companion]++
 			}
 			break
 		}
@@ -267,6 +295,14 @@ func (s *InMemoryRecordStore) Delete(record models.Record) error {
 						s.levelRecords[levelKey] = append(levelRecords[:j], levelRecords[j+1:]...)
 						break
 					}
+				}
+			}
+
+			// Update companion counts
+			if r.Companion != "" {
+				s.companionCounts[r.Companion]--
+				if s.companionCounts[r.Companion] <= 0 {
+					delete(s.companionCounts, r.Companion)
 				}
 			}
 			break
@@ -433,6 +469,18 @@ func (s *InMemoryRecordStore) generateLevelKey(record models.Record) string {
 	}
 	// For orbit: leveltype-levelnumber-levelmode
 	return record.LevelType + "-" + record.LevelNumber + "-" + record.LevelMode
+}
+
+func (s *InMemoryRecordStore) GetCompanionCounts() map[string]int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Return a copy to prevent external modifications
+	result := make(map[string]int)
+	for companion, count := range s.companionCounts {
+		result[companion] = count
+	}
+	return result
 }
 
 func getFilters(key, value string) func(models.Record) bool {

@@ -61,8 +61,6 @@ func main() {
 
 	r.GET("/ping", server.Ping)
 	r.POST("/login", server.Login)
-	r.POST("/analyze", server.AnalyzeCombatPower)
-	r.GET("/level-suggestion", server.GetLevelSuggestion)
 
 	authRequired := r.Group("/")
 	authRequired.Use(server.AuthMiddleware())
@@ -85,6 +83,8 @@ func main() {
 		authRequired.GET("/user", server.GetUser)
 		authRequired.PUT("/user", server.UpdateUser)
 	}
+	r.POST("/analyze", server.AnalyzeCombatPower)
+	r.GET("/level-suggestion", server.GetLevelSuggestion)
 
 	r.GET("/orbit-records", server.GetOrbitRecords)
 	r.GET("/championships-records", server.GetChampionshipsRecords)
@@ -93,6 +93,7 @@ func main() {
 	r.GET("/latest-championships-records", server.GetLatestChampionshipsRecords)
 
 	r.GET("/ranking", server.GetRanking)
+	r.GET("/news", server.GetNews)
 
 	r.Run(":8080")
 }
