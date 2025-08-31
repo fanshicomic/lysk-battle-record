@@ -109,6 +109,7 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 	var store datastores.RecordStore
 	if isChampionships {
 		store = s.championshipsRecordStore
+		tempRecord.LevelType = levelNumber
 	} else {
 		if levelMode == "" {
 			levelMode = "稳定"
