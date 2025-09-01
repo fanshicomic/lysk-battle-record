@@ -21,6 +21,7 @@ type News struct {
 	OrbitPartnerLevelCounts            map[string]int `json:"orbit_partner_level_counts"`
 	ChampionshipsPartnerLevelCounts    map[string]int `json:"championships_partner_level_counts"`
 	OrbitTopMostRecordsLevels          []LevelInfo    `json:"top_most_records_levels"`
+	OrbitLevelCounts                   int            `json:"orbit_level_counts"`
 }
 
 func (s *LyskServer) GetOrbitRecordCompanionCounts() map[string]int {
@@ -94,6 +95,11 @@ func (s *LyskServer) GetOrbitTopMostRecordsLevels() []LevelInfo {
 	return levels
 }
 
+func (s *LyskServer) GetOrbitLevelCounts() int {
+	levelRecordsMap := s.orbitRecordStore.GetAllLevelRecords()
+	return len(levelRecordsMap)
+}
+
 func (s *LyskServer) GetNews(c *gin.Context) {
 	news := News{
 		OrbitRecordCompanionCounts:         s.GetOrbitRecordCompanionCounts(),
@@ -103,6 +109,7 @@ func (s *LyskServer) GetNews(c *gin.Context) {
 		OrbitPartnerLevelCounts:            s.GetOrbitPartnerLevelCounts(),
 		ChampionshipsPartnerLevelCounts:    s.GetChampionshipsPartnerLevelCounts(),
 		OrbitTopMostRecordsLevels:          s.GetOrbitTopMostRecordsLevels(),
+		OrbitLevelCounts:                   s.GetOrbitLevelCounts(),
 	}
 
 	c.JSON(http.StatusOK, news)
