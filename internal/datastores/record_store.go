@@ -26,8 +26,11 @@ type RecordStore interface {
 	IsDuplicate(record models.Record) bool
 	GetRanking(userId string) []models.RankingItem
 	EvaluateRecord(record models.Record) string
+
+	GetAllLevelRecords() map[string][]models.Record
 	GetLevelRecords(record models.Record) []models.Record
 	GetCompanionCounts() map[string]int
+	GetPartnerLevelCounts() map[string]int
 }
 
 type InMemoryRecordStore struct {
@@ -354,6 +357,13 @@ func (s *InMemoryRecordStore) GetRanking(userId string) []models.RankingItem {
 	return result
 }
 
+func (s *InMemoryRecordStore) GetAllLevelRecords() map[string][]models.Record {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.levelRecords
+}
+
 func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Record {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -480,6 +490,58 @@ func (s *InMemoryRecordStore) GetCompanionCounts() map[string]int {
 	for companion, count := range s.companionCounts {
 		result[companion] = count
 	}
+	return result
+}
+
+func (s *InMemoryRecordStore) GetPartnerLevelCounts() map[string]int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	partnerCompanionMap := utils.GetPartnerCompanionMap()
+	partnerLevelSets := make(map[string]map[string]bool)
+
+	// Initialize partner level sets
+	for partner := range partnerCompanionMap {
+		partnerLevelSets[partner] = make(map[string]bool)
+	}
+
+	// Iterate through all level records to count unique levels per partner
+	for levelKey, records := range s.levelRecords {
+		if len(records) == 0 {
+			continue
+		}
+
+		// Track which partners have records in this level
+		partnersInLevel := make(map[string]bool)
+
+		for _, record := range records {
+			if record.Deleted {
+				continue
+			}
+
+			// Find which partner this companion belongs to
+			for partner, companions := range partnerCompanionMap {
+				for _, companion := range companions {
+					if record.Companion == companion {
+						partnersInLevel[partner] = true
+						break
+					}
+				}
+			}
+		}
+
+		// Add this level to each partner that has records in it
+		for partner := range partnersInLevel {
+			partnerLevelSets[partner][levelKey] = true
+		}
+	}
+
+	// Convert sets to counts
+	result := make(map[string]int)
+	for partner, levelSet := range partnerLevelSets {
+		result[partner] = len(levelSet)
+	}
+
 	return result
 }
 
