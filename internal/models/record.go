@@ -617,3 +617,18 @@ func (r Record) ToStats() Stats {
 		Buff:         buff,
 	}
 }
+
+func (r Record) GenerateLevelKey() string {
+	// For championships: round-leveltype
+	if r.LevelType == "A4" || r.LevelType == "B4" || r.LevelType == "C4" {
+		recordTime, err := time.Parse(time.RFC3339, r.Time)
+		if err != nil {
+			recordTime = time.Now()
+		}
+		start, _ := utils.GetChampionshipsRoundByTime(recordTime)
+		roundKey := start.Format("2006-01-02") // Use start date as round identifier
+		return roundKey + "-" + r.LevelType
+	}
+	// For orbit: leveltype-levelnumber-levelmode
+	return r.LevelType + "-" + r.LevelNumber + "-" + r.LevelMode
+}

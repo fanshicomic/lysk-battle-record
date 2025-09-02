@@ -82,6 +82,8 @@ func main() {
 		authRequired.POST("/user", server.CreateUser)
 		authRequired.GET("/user", server.GetUser)
 		authRequired.PUT("/user", server.UpdateUser)
+
+		authRequired.GET("/user-news", server.GetUserNews)
 	}
 	r.POST("/analyze", server.AnalyzeCombatPower)
 	r.GET("/level-suggestion", server.GetLevelSuggestion)

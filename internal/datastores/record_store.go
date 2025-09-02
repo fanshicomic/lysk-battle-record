@@ -113,7 +113,7 @@ func (s *InMemoryRecordStore) refresh() {
 
 	for _, record := range data {
 		if !record.Deleted {
-			levelKey := s.generateLevelKey(record)
+			levelKey := record.GenerateLevelKey()
 			levelRecords[levelKey] = append(levelRecords[levelKey], record)
 
 			// Count companions
@@ -198,7 +198,7 @@ func (s *InMemoryRecordStore) Insert(record models.Record) {
 
 	// Update the levelRecords map and companion counts
 	if !record.Deleted {
-		levelKey := s.generateLevelKey(record)
+		levelKey := record.GenerateLevelKey()
 		s.levelRecords[levelKey] = append(s.levelRecords[levelKey], record)
 
 		// Update companion counts
@@ -254,7 +254,7 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 			s.records[i] = record
 
 			// Update in level bucket - find and replace by ID
-			levelKey := s.generateLevelKey(record)
+			levelKey := record.GenerateLevelKey()
 			if levelRecords, exists := s.levelRecords[levelKey]; exists {
 				for j, lr := range levelRecords {
 					if lr.Id == record.Id {
@@ -291,7 +291,7 @@ func (s *InMemoryRecordStore) Delete(record models.Record) error {
 			s.records[i].Deleted = true
 
 			// Remove from the levelRecords map by finding the correct record by ID
-			levelKey := s.generateLevelKey(r)
+			levelKey := r.GenerateLevelKey()
 			if levelRecords, exists := s.levelRecords[levelKey]; exists {
 				for j, lr := range levelRecords {
 					if lr.Id == record.Id {
