@@ -131,7 +131,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.Weapon = pkg.GetValue(input, "武器")
 	record.TotalLevel = pkg.GetValue(input, "卡总等级")
 	record.Note = pkg.GetValue(input, "备注")
-	record.StarRank = pkg.GetValue(input, "星级")
+	record.StarRank = cleanUpStarRankValue(pkg.GetValue(input, "星级"))
 
 	if _, err := record.ValidateOrbit(); err != nil {
 		logrus.Errorf("[Orbit] Record validation failed: %v", err)
