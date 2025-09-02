@@ -220,7 +220,21 @@ func (s *LyskServer) GetUserNews(c *gin.Context) {
 }
 
 func formatLevelName(level string) string {
-	level = strings.ReplaceAll(level, "-", " ")
-	level = strings.ReplaceAll(level, "_", " ")
+	// orbit
+	if strings.Contains(level, "稳定") {
+		level = strings.ReplaceAll(level, "-", " ")
+		level = strings.ReplaceAll(level, "_", " ")
+		if strings.Contains(level, "开放") {
+			return level
+		}
+		level = strings.ReplaceAll(level, " 稳定", "")
+		return level
+	}
+
+	// championships
+	level = strings.ReplaceAll(level, "-A4", " A4")
+	level = strings.ReplaceAll(level, "-B4", " B4")
+	level = strings.ReplaceAll(level, "-C4", " C4")
+
 	return level
 }
