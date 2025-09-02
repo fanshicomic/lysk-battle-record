@@ -231,7 +231,7 @@ func (s *LyskServer) UpdateOrbitRecord(c *gin.Context) {
 	record.Weapon = pkg.GetValue(input, "武器")
 	record.TotalLevel = pkg.GetValue(input, "卡总等级")
 	record.Note = pkg.GetValue(input, "备注")
-	record.StarRank = pkg.GetValue(input, "星级")
+	record.StarRank = cleanUpStarRankValue(pkg.GetValue(input, "星级"))
 
 	if _, err := record.ValidateOrbit(); err != nil {
 		logrus.Errorf("[Orbit] Record validation failed: %v", err)
@@ -286,4 +286,18 @@ func (s *LyskServer) DeleteOrbitRecord(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+func cleanUpStarRankValue(value string) string {
+	validValue := map[string]bool{
+		"零星": true,
+		"一星": true,
+		"二星": true,
+		"三星": true,
+	}
+	if _, exists := validValue[value]; exists {
+		return value
+	}
+
+	return ""
 }
