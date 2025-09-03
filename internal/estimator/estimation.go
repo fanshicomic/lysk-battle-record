@@ -63,6 +63,8 @@ func getCompanion(stats models.Stats) companions.Companion {
 		return companions.KingOfDarknight{}
 	case "极地军医":
 		return companions.MedicOfTheArctic{}
+	case "深空飞行员":
+		return companions.DeepspacePilot{}
 	default:
 		return companions.DefaultCompanion{}
 	}
