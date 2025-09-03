@@ -44,10 +44,8 @@ func main() {
 
 	r := gin.Default()
 
-	//allowOrigins := []string{"https://uygnim.com"}
-	//if isLocal() {
-	//	allowOrigins = []string{"*"}
-	//}
+	r.Use(pkg.TimeoutMiddleware(5 * time.Second))
+
 	allowOrigins := []string{"*"}
 
 	r.Use(cors.New(cors.Config{

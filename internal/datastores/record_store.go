@@ -153,12 +153,13 @@ func (s *InMemoryRecordStore) GetAll() []models.Record {
 
 func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	res := append(models.Records{}, s.records...)
+	s.mu.RUnlock()
+
 	if opt.Limit <= 0 {
 		opt.Limit = 10
 	}
 
-	res := append(models.Records{}, s.records...)
 	for k, v := range opt.Filters {
 		filterFunc := getFilters(k, v)
 		res = res.Filter(filterFunc)
@@ -189,10 +190,10 @@ func (s *InMemoryRecordStore) Query(opt QueryOptions) QueryResult {
 
 func (s *InMemoryRecordStore) Insert(record models.Record) {
 	s.ingestHash(record)
+	record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 	s.records = append(s.records, record)
 	delete(s.ingestPoolHash, record.GetHash())
 
@@ -230,9 +231,10 @@ func (s *InMemoryRecordStore) IsDuplicate(record models.Record) bool {
 
 func (s *InMemoryRecordStore) Get(id string) (models.Record, bool) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	records := s.records
+	s.mu.RUnlock()
 
-	for _, r := range s.records {
+	for _, r := range records {
 		if r.Id == id {
 			return r, true
 		}
@@ -241,6 +243,9 @@ func (s *InMemoryRecordStore) Get(id string) (models.Record, bool) {
 }
 
 func (s *InMemoryRecordStore) Update(record models.Record) error {
+	record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
+	levelKey := record.GenerateLevelKey()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i, r := range s.records {
@@ -249,12 +254,10 @@ func (s *InMemoryRecordStore) Update(record models.Record) error {
 				return errors.New("cannot update a deleted record")
 			}
 
-			record.CombatPower = s.cpEstimator.EstimateCombatPower(record)
 			oldCompanion := r.Companion
 			s.records[i] = record
 
 			// Update in level bucket - find and replace by ID
-			levelKey := record.GenerateLevelKey()
 			if levelRecords, exists := s.levelRecords[levelKey]; exists {
 				for j, lr := range levelRecords {
 					if lr.Id == record.Id {
@@ -365,9 +368,6 @@ func (s *InMemoryRecordStore) GetAllLevelRecords() map[string][]models.Record {
 }
 
 func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Record {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	// Create a temporary record to generate the level key
 	tempRecord := models.Record{
 		LevelType:   record.LevelType,
@@ -377,7 +377,11 @@ func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Rec
 	}
 
 	levelKey := s.generateLevelKey(tempRecord)
+
+	s.mu.RLock()
 	levelRecords, exists := s.levelRecords[levelKey]
+	s.mu.RUnlock()
+
 	if !exists {
 		return []models.Record{}
 	}
@@ -485,17 +489,13 @@ func (s *InMemoryRecordStore) GetCompanionCounts() map[string]int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// Return a copy to prevent external modifications
-	result := make(map[string]int)
-	for companion, count := range s.companionCounts {
-		result[companion] = count
-	}
-	return result
+	return s.companionCounts
 }
 
 func (s *InMemoryRecordStore) GetPartnerLevelCounts() map[string]int {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	levelRecords := s.levelRecords
+	s.mu.RUnlock()
 
 	partnerCompanionMap := utils.GetPartnerCompanionMap()
 	partnerLevelSets := make(map[string]map[string]bool)
@@ -506,7 +506,7 @@ func (s *InMemoryRecordStore) GetPartnerLevelCounts() map[string]int {
 	}
 
 	// Iterate through all level records to count unique levels per partner
-	for levelKey, records := range s.levelRecords {
+	for levelKey, records := range levelRecords {
 		if len(records) == 0 {
 			continue
 		}
