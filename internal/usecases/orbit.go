@@ -127,7 +127,7 @@ func (s *LyskServer) ProcessOrbitRecord(c *gin.Context) {
 	record.OathRegen = pkg.GetValue(input, "誓约回能")
 	record.Companion = pkg.GetValue(input, "搭档身份")
 	record.SetCard = pkg.GetValue(input, "日卡")
-	record.Stage = cleanUpStage(record.SetCard, pkg.GetValue(input, "阶数"))
+	record.Stage = pkg.GetValue(input, "阶数")
 	record.Weapon = pkg.GetValue(input, "武器")
 	record.TotalLevel = pkg.GetValue(input, "卡总等级")
 	record.Note = pkg.GetValue(input, "备注")
@@ -227,7 +227,7 @@ func (s *LyskServer) UpdateOrbitRecord(c *gin.Context) {
 	record.OathRegen = pkg.GetValue(input, "誓约回能")
 	record.Companion = pkg.GetValue(input, "搭档身份")
 	record.SetCard = pkg.GetValue(input, "日卡")
-	record.Stage = cleanUpStage(record.SetCard, pkg.GetValue(input, "阶数"))
+	record.Stage = pkg.GetValue(input, "阶数")
 	record.Weapon = pkg.GetValue(input, "武器")
 	record.TotalLevel = pkg.GetValue(input, "卡总等级")
 	record.Note = pkg.GetValue(input, "备注")
@@ -300,12 +300,4 @@ func cleanUpStarRankValue(value string) string {
 	}
 
 	return ""
-}
-
-func cleanUpStage(card, stage string) string {
-	if card == "无套装" {
-		return ""
-	}
-
-	return stage
 }

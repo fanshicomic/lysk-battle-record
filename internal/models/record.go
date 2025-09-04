@@ -458,7 +458,7 @@ func (r Record) validateStage() bool {
 		"无套装": true,
 	}
 
-	return validStages[r.Stage] || (r.SetCard == "无套装" && r.Stage == "")
+	return validStages[r.Stage]
 }
 
 func (r Record) validateTotalLevel() bool {
