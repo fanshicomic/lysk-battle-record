@@ -4,6 +4,7 @@ import (
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/pkg"
 	"lysk-battle-record/internal/sheet_clients"
+	"sync"
 )
 
 func InitLyskServer(orbitRecordStore datastores.RecordStore, orbitSheetClient sheet_clients.RecordSheetClient,
@@ -29,4 +30,5 @@ type LyskServer struct {
 	userStore                datastores.UserStore
 	userSheetClient          sheet_clients.UserSheetClient
 	auth                     *pkg.Authenticator
+	userCreationMutex        sync.Mutex
 }
