@@ -1,10 +1,11 @@
 package usecases
 
 import (
+	"sync"
+
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/pkg"
 	"lysk-battle-record/internal/sheet_clients"
-	"sync"
 )
 
 func InitLyskServer(orbitRecordStore datastores.RecordStore, orbitSheetClient sheet_clients.RecordSheetClient,
