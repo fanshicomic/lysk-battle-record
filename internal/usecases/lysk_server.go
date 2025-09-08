@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"sync"
+
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/pkg"
 	"lysk-battle-record/internal/sheet_clients"
@@ -29,4 +31,5 @@ type LyskServer struct {
 	userStore                datastores.UserStore
 	userSheetClient          sheet_clients.UserSheetClient
 	auth                     *pkg.Authenticator
+	userCreationMutex        sync.Mutex
 }

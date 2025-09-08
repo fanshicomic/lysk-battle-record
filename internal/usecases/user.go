@@ -81,6 +81,9 @@ func (s *LyskServer) GetRanking(c *gin.Context) {
 }
 
 func (s *LyskServer) createUserIfNotExist(userId string) error {
+	s.userCreationMutex.Lock()
+	defer s.userCreationMutex.Unlock()
+
 	var user models.User
 	user.ID = userId
 
@@ -99,6 +102,9 @@ func (s *LyskServer) createUserIfNotExist(userId string) error {
 }
 
 func (s *LyskServer) CreateUser(c *gin.Context) {
+	s.userCreationMutex.Lock()
+	defer s.userCreationMutex.Unlock()
+
 	var user models.User
 	if err := c.BindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
