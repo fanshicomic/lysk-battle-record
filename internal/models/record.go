@@ -176,7 +176,9 @@ func (r Record) validateLevelNumber() bool {
 	validEasyLevelNumber := r.LevelMode == "稳定" && levelNumber <= maxEasyLevelNumber[r.LevelType]
 	validHardLevelNumber := r.LevelMode == "波动" && levelNumber <= maxHardLevelNumber[r.LevelType]
 	isValidNumber := levelNumber > 0 && (validEasyLevelNumber || validHardLevelNumber)
-	isValidPart := (levelNumber%10 != 0 && levelPart == "") || (levelNumber%10 == 0 && levelPart == "上" || levelPart == "下")
+	isValidPart := (levelNumber%10 != 0 && levelPart == "") ||
+		(levelNumber%10 == 0 && (levelPart == "上" || levelPart == "下")) ||
+		(r.LevelMode == "波动" && levelNumber%5 == 0 && (levelPart == "上" || levelPart == "下"))
 	if !isValidNumber || !isValidPart {
 		return false
 	}
