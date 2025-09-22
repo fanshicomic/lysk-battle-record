@@ -251,6 +251,7 @@ func (r Record) validateHP() (bool, error) {
 		"潮汐之神": true,
 		"深渊主宰": true,
 		"暗蚀国王": true,
+		"终末之神": true,
 	}
 
 	if _, ok := hpCompanions[r.Companion]; ok && n == 0 {
@@ -517,9 +518,9 @@ func (r Record) ValidateOrbit() (bool, error) {
 		return false, fmt.Errorf("关卡模式错误: %s", r.LevelMode)
 	}
 
-	//if !r.validateStarRank() {
-	//	return false, fmt.Errorf("波动关卡通关星级错误: %s", r.StarRank)
-	//}
+	if !r.validateStarRank() {
+		return false, fmt.Errorf("波动关卡通关星级错误: %s", r.StarRank)
+	}
 
 	if !r.validatePartnerAndLevelType() {
 		return false, fmt.Errorf("搭档身份与关卡类型不匹配: %s - %s", r.Companion, r.LevelType)
