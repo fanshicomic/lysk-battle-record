@@ -13,7 +13,7 @@ const (
 
 func GetCompanion(c *gin.Context) string {
 	filteredCompanion := c.DefaultQuery("filteredCompanion", AllCompanion)
-	if filteredCompanion == "" || filteredCompanion != "null" {
+	if filteredCompanion == "" || filteredCompanion == "null" {
 		return AllCompanion
 	}
 	return filteredCompanion
