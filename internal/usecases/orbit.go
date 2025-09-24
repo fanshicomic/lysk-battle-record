@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,28 +10,15 @@ import (
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/models"
 	"lysk-battle-record/internal/pkg"
+	"lysk-battle-record/internal/utils"
 )
 
 // All Orbit Records
 
 func (s *LyskServer) GetOrbitRecords(c *gin.Context) {
-	levelType := c.Query("type")
-	levelNum := c.Query("level")
-	levelMode := c.Query("mode")
-	offsetStr := c.DefaultQuery("offset", "0")
-	offset, _ := strconv.Atoi(offsetStr)
-
-	if levelMode == "" {
-		levelMode = "稳定"
-	}
-
 	record := s.orbitRecordStore.Query(datastores.QueryOptions{
-		Filters: map[string]string{
-			"关卡": levelType,
-			"关数": levelNum,
-			"模式": levelMode,
-		},
-		Offset: offset,
+		Filters: utils.BuildOrbitFilters(c, true),
+		Offset:  utils.GetOffset(c),
 	})
 	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
@@ -49,29 +35,18 @@ func (s *LyskServer) GetLatestOrbitRecords(c *gin.Context) {
 // My Orbit Records
 
 func (s *LyskServer) GetMyOrbitRecords(c *gin.Context) {
-	levelType := c.Query("type")
-	levelNum := c.Query("level")
-	levelMode := c.Query("mode")
-	offsetStr := c.DefaultQuery("offset", "0")
-	offset, _ := strconv.Atoi(offsetStr)
 	userId, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
 		return
 	}
 
-	if levelMode == "" {
-		levelMode = "稳定"
-	}
+	filters := utils.BuildOrbitFilters(c, false)
+	filters["用户ID"] = userId.(string)
 
 	record := s.orbitRecordStore.Query(datastores.QueryOptions{
-		Filters: map[string]string{
-			"关卡":   levelType,
-			"关数":   levelNum,
-			"模式":   levelMode,
-			"用户ID": userId.(string),
-		},
-		Offset: offset,
+		Filters: filters,
+		Offset:  utils.GetOffset(c),
 	})
 	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
@@ -79,8 +54,6 @@ func (s *LyskServer) GetMyOrbitRecords(c *gin.Context) {
 
 func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 	userId, exists := c.Get("userID")
-	offsetStr := c.DefaultQuery("offset", "0")
-	offset, _ := strconv.Atoi(offsetStr)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
 		return
@@ -90,7 +63,7 @@ func (s *LyskServer) GetAllMyOrbitRecords(c *gin.Context) {
 		Filters: map[string]string{
 			"用户ID": userId.(string),
 		},
-		Offset: offset,
+		Offset: utils.GetOffset(c),
 	})
 	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
