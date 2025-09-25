@@ -493,8 +493,8 @@ func (r Record) validateStarRank() bool {
 }
 
 func (r Record) ValidateNote() (bool, error) {
-	if utf8.RuneCountInString(r.Note) > 20 {
-		return false, fmt.Errorf("备注最长20个字: %s", r.Note)
+	if utf8.RuneCountInString(r.Note) > 40 {
+		return false, fmt.Errorf("备注最长30个字: %s", r.Note)
 	}
 
 	detector, err := pkg.NewDetector()
