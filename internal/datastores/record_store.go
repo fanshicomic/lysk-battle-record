@@ -425,7 +425,11 @@ func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Rec
 }
 
 func (s *InMemoryRecordStore) EvaluateRecord(record models.Record) string {
-	sameLevelRecords := s.GetLevelRecords(record)
+	sameLevelRecords := s.GetLevelRecords(models.Record{
+		LevelType:   record.LevelType,
+		LevelNumber: record.LevelNumber,
+		LevelMode:   record.LevelMode,
+	})
 
 	// Filter records with valid buffed scores
 	validRecords := []models.Record{}
