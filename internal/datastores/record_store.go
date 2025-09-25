@@ -410,6 +410,14 @@ func (s *InMemoryRecordStore) GetLevelRecords(record models.Record) []models.Rec
 			}
 		}
 
+		if record.Companion != "" && record.Companion != utils.AllCompanion && record.Companion != r.Companion {
+			continue
+		}
+
+		if record.SetCard != "" && record.SetCard != utils.AllSetCard && record.SetCard != r.SetCard {
+			continue
+		}
+
 		result = append(result, r)
 	}
 

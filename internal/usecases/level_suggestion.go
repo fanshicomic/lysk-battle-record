@@ -7,9 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"lysk-battle-record/internal/datastores"
 	"lysk-battle-record/internal/models"
+	"lysk-battle-record/internal/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 type CompanionSetCardPair struct {
@@ -102,6 +104,8 @@ func (s *LyskServer) GetLevelSuggestion(c *gin.Context) {
 		LevelNumber: levelNumber,
 		LevelMode:   levelMode,
 		Time:        time.Now().Format(time.RFC3339),
+		Companion:   utils.GetCompanion(c),
+		SetCard:     utils.GetSetCard(c),
 	}
 
 	// Determine which store to use

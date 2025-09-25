@@ -17,16 +17,11 @@ import (
 // All Championships Records
 
 func (s *LyskServer) GetChampionshipsRecords(c *gin.Context) {
-	level := c.Query("level")
-	offsetStr := c.DefaultQuery("offset", "0")
-	offset, _ := strconv.Atoi(offsetStr)
 	start, end := utils.GetCurrentChampionshipsRound()
 
 	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
-		Filters: map[string]string{
-			"关卡": level,
-		},
-		Offset:    offset,
+		Filters:   utils.BuildChampionshipFilters(c, true),
+		Offset:    utils.GetOffset(c),
 		TimeStart: start,
 		TimeEnd:   end,
 	})
@@ -46,21 +41,17 @@ func (s *LyskServer) GetLatestChampionshipsRecords(c *gin.Context) {
 }
 
 func (s *LyskServer) GetMyChampionshipsRecords(c *gin.Context) {
-	level := c.Query("level")
-	offsetStr := c.DefaultQuery("offset", "0")
-	offset, _ := strconv.Atoi(offsetStr)
 	userId, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录或无效的用户"})
 		return
 	}
 
+	filters := utils.BuildChampionshipFilters(c, false)
+	filters["用户ID"] = userId.(string)
 	record := s.championshipsRecordStore.Query(datastores.QueryOptions{
-		Filters: map[string]string{
-			"关卡":   level,
-			"用户ID": userId.(string),
-		},
-		Offset: offset,
+		Filters: filters,
+		Offset:  utils.GetOffset(c),
 	})
 	s.populateNicknameForRecords(record.Records)
 	c.JSON(http.StatusOK, record)
