@@ -147,7 +147,7 @@ func (p KingOfDarknight) GetLordPeriodSupportSkill(stats models.Stats) models.Sk
 	skill.Base = 720
 	skill.AttackRate = 384
 	skill.HpRate = 35
-	skill.Count = baseCount * p.GetNormalPeriodCount()
+	skill.Count = baseCount * p.GetLordPeriodCount()
 	return skill
 }
 
