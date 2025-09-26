@@ -151,7 +151,7 @@ func (r Record) validateLevelNumber() bool {
 	maxEasyLevelNumber := map[string]int{
 		"光":   210,
 		"火":   210,
-		"冰":   180,
+		"冰":   210,
 		"能量": 150,
 		"引力": 120,
 		"开放": 300,
