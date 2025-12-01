@@ -152,7 +152,7 @@ func (r Record) validateLevelNumber() bool {
 		"光":   210,
 		"火":   210,
 		"冰":   210,
-		"能量": 150,
+		"能量": 180,
 		"引力": 120,
 		"开放": 300,
 	}
@@ -228,6 +228,7 @@ func (r Record) validateDefence() (bool, error) {
 		"永恒先知":     true,
 		"远空执舰官":   true,
 		"利莫里亚海神": true,
+		"银翼恶魔":     true,
 	}
 
 	if _, ok := defenceCompanions[r.Companion]; ok && n == 0 {
