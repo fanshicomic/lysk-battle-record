@@ -153,7 +153,7 @@ func (r Record) validateLevelNumber() bool {
 		"火":   210,
 		"冰":   210,
 		"能量": 180,
-		"引力": 120,
+		"引力": 150,
 		"开放": 300,
 	}
 
