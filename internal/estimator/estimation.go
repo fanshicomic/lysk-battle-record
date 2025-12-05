@@ -62,7 +62,9 @@ func getCompanion(stats models.Stats) companions.Companion {
 	case "暗蚀国王":
 		return companions.KingOfDarknight{}
 	case "终末之神":
-		return companions.GodOfAnnihilation{}
+		return companions.SilverwingFiend{}
+	case "银翼恶魔":
+		return companions.SilverwingFiend{}
 	case "极地军医":
 		return companions.MedicOfTheArctic{}
 	case "深空飞行员":
@@ -101,6 +103,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Nightvow{}
 	case "神谕":
 		setCard = set_cards.Diviner{}
+	case "猩红":
+		setCard = set_cards.CrimsonRapture{}
 	case "无套装":
 		setCard = set_cards.NoSet{}
 	default:
@@ -124,6 +128,7 @@ func getSetCardBuff(stats models.Stats, setCard set_cards.SetCard) models.StageB
 		"利莫里亚海神": "雾海",
 		"暗蚀国王":     "夜誓",
 		"终末之神":     "神谕",
+		"银翼恶魔":     "猩红",
 	}
 	var setCardBuff models.StageBuff
 	if setCard.GetName() == setMap[stats.Companion] {
@@ -147,6 +152,7 @@ func applySetCardBuff(flow *models.CompanionFlow, buff models.StageBuff) {
 				skill.WeakenBoost += allBuff.WeakenBoost
 				skill.DamageBoost += allBuff.DamageBoost
 				skill.OathBoost += allBuff.OathBoost
+				skill.EnemyWeakenBoost += allBuff.EnemyWeakenBoost
 				if allBuff.CountBonus > 1 {
 					skill.Count = int(float64(skill.Count) * allBuff.CountBonus)
 				}
@@ -158,6 +164,7 @@ func applySetCardBuff(flow *models.CompanionFlow, buff models.StageBuff) {
 				skill.WeakenBoost += skillBuff.WeakenBoost
 				skill.DamageBoost += skillBuff.DamageBoost
 				skill.OathBoost += skillBuff.OathBoost
+				skill.EnemyWeakenBoost += skillBuff.EnemyWeakenBoost
 				if skillBuff.CountBonus > 1 {
 					skill.Count = int(float64(skill.Count) * skillBuff.CountBonus)
 				}
@@ -190,6 +197,9 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 			// consider level - defence relationship
 			levelDefenseRatio := 1 + float64(stats.TotalLevel)/(float64(stats.TotalLevel)+300+(80*3+100)*(1-skill.EnemyDefenceReduction/100))
 			rawSkillScore *= levelDefenseRatio
+
+			// consider enemy weaken boost
+			rawSkillScore *= 1 + (1+skill.EnemyWeakenBoost)/100
 
 			// consider non-weaken period
 			weakenRate := period.WeakenRate
@@ -278,6 +288,9 @@ func printCompanionFlow(flow models.CompanionFlow) {
 			}
 			if skill.EnemyDefenceReduction > 0 {
 				fmt.Printf("    DefenceReduction: %.1f%%", skill.EnemyDefenceReduction)
+			}
+			if skill.EnemyWeakenBoost > 0 {
+				fmt.Printf("    EnemyWeakenBoost: %.1f%%", skill.EnemyWeakenBoost)
 			}
 
 			fmt.Printf("    CanBeCrit: %t\n", skill.CanBeCrit)

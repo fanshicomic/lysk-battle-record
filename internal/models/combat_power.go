@@ -44,6 +44,7 @@ type Skill struct {
 	DamageBoost           float64
 	OathBoost             float64
 	EnemyDefenceReduction float64
+	EnemyWeakenBoost      float64
 	Count                 int
 	CanBeCrit             bool
 	NoWeakenPeriod        bool
@@ -68,6 +69,7 @@ type SkillBuff struct {
 	CritDmg          float64
 	WeakenBoost      float64
 	DamageBoost      float64
+	EnemyWeakenBoost float64
 	OathBoost        float64
 	DefenceReduction float64
 	CountBonus       float64
