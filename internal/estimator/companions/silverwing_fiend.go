@@ -131,7 +131,7 @@ func (p SilverwingFiend) GetBloodPeriodHeavyAttack(stats models.Stats) models.Sk
 		skill.Base = 180.0
 		skill.AttackRate = 96.0
 		skill.DefenseRate = 381.0
-		skill.Count = p.GetBloodPeriodCount()
+		skill.Count = 3 * p.GetBloodPeriodCount()
 		skill.DamageBoost = 15.0
 
 		return skill
@@ -216,7 +216,7 @@ func (p SilverwingFiend) GetBloodPeriodRoseThornsSkill(stats models.Stats) model
 }
 
 func (p SilverwingFiend) GetRoseBulletSkill(stats models.Stats) models.Skill {
-	count := 6 * p.GetBloodPeriodCount() // 一次重击 (带一次普攻) + 三次蔷薇地棘 + 一次堙界之棂
+	count := 10 * p.GetBloodPeriodCount() // 三次重击 (各带一次普攻) + 三次蔷薇地棘 + 一次堙界之棂
 	if stats.SetCard != "猩红" {
 		count = 0
 	}
@@ -228,7 +228,7 @@ func (p SilverwingFiend) GetRoseBulletSkill(stats models.Stats) models.Skill {
 		DefenseRate: 168,
 		CanBeCrit:   true,
 		DamageBoost: 15,
-		Count:       count, // 一次重击 + 三次蔷薇地棘 + 一次堙界之棂
+		Count:       count,
 	}
 }
 
