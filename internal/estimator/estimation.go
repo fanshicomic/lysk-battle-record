@@ -62,7 +62,7 @@ func getCompanion(stats models.Stats) companions.Companion {
 	case "暗蚀国王":
 		return companions.KingOfDarknight{}
 	case "终末之神":
-		return companions.SilverwingFiend{}
+		return companions.GodOfAnnihilation{}
 	case "银翼恶魔":
 		return companions.SilverwingFiend{}
 	case "极地军医":
