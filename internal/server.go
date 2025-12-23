@@ -44,6 +44,7 @@ type Server interface {
 	// Level Suggestion
 	SuggestLevel(c *gin.Context)
 	GetLevelBuffedCP(c *gin.Context)
+	GetMinCombatPower(c *gin.Context)
 
 	// News
 	GetNews(c *gin.Context)

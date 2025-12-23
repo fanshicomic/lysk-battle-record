@@ -85,6 +85,7 @@ func main() {
 	}
 	r.POST("/analyze", server.AnalyzeCombatPower)
 	r.GET("/level-suggestion", server.GetLevelSuggestion)
+	r.GET("/min-combat-power", server.GetMinCombatPower)
 
 	r.GET("/orbit-records", server.GetOrbitRecords)
 	r.GET("/championships-records", server.GetChampionshipsRecords)
