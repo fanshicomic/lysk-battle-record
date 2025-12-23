@@ -63,24 +63,22 @@ func TestGetMinCombatPower(t *testing.T) {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 
-	if len(response) != 3 {
-		t.Errorf("Expected 3 response items, got %d", len(response))
+	if len(response) != 2 {
+		t.Errorf("Expected 2 response items, got %d", len(response))
 	}
 
-	// Verify Sorting: Fire comes before Light (alphabetical), then Light 2 comes before Light 10 (numerical)
+	// Verify Sorting and Filtering:
+	// Fire 20 (Kept, %10==0)
+	// Light 2 (Filtered, %10!=0)
+	// Light 10 (Kept, %10==0)
 	
 	// Index 0: Fire 20
 	if response[0].LevelType != "Fire" || response[0].LevelNumber != "20" {
 		t.Errorf("Expected first item to be Fire 20, got %s %s", response[0].LevelType, response[0].LevelNumber)
 	}
 
-	// Index 1: Light 2
-	if response[1].LevelType != "Light" || response[1].LevelNumber != "2" {
-		t.Errorf("Expected second item to be Light 2, got %s %s", response[1].LevelType, response[1].LevelNumber)
-	}
-
-	// Index 2: Light 10
-	if response[2].LevelType != "Light" || response[2].LevelNumber != "10" {
-		t.Errorf("Expected third item to be Light 10, got %s %s", response[2].LevelType, response[2].LevelNumber)
+	// Index 1: Light 10
+	if response[1].LevelType != "Light" || response[1].LevelNumber != "10" {
+		t.Errorf("Expected second item to be Light 10, got %s %s", response[1].LevelType, response[1].LevelNumber)
 	}
 }

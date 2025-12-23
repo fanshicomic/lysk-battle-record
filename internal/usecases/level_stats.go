@@ -30,6 +30,13 @@ func (s *LyskServer) GetMinCombatPower(c *gin.Context) {
 		// Use the first record to identify the level
 		firstRecord := records[0]
 
+		// Filter: Only include levels where LevelNumber % 10 == 0
+		parts := strings.Split(firstRecord.LevelNumber, "_")
+		levelNum, err := strconv.Atoi(parts[0])
+		if err != nil || levelNum%10 != 0 {
+			continue
+		}
+
 		minCP := -1
 
 		for _, record := range records {
