@@ -69,6 +69,8 @@ func getCompanion(stats models.Stats) companions.Companion {
 		return companions.MedicOfTheArctic{}
 	case "深空飞行员":
 		return companions.DeepspacePilot{}
+	case "异界来客":
+		return companions.OtherworldlyVisitor{}
 	default:
 		return companions.DefaultCompanion{}
 	}
