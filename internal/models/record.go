@@ -153,7 +153,7 @@ func (r Record) validateLevelNumber() bool {
 		"火":   210,
 		"冰":   210,
 		"能量": 180,
-		"引力": 150,
+		"引力": 180,
 		"开放": 300,
 	}
 
@@ -253,6 +253,7 @@ func (r Record) validateHP() (bool, error) {
 		"深渊主宰": true,
 		"暗蚀国王": true,
 		"终末之神": true,
+		"冥罗之主": true,
 	}
 
 	if _, ok := hpCompanions[r.Companion]; ok && n == 0 {
