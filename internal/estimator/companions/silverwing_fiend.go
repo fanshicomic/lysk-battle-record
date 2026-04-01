@@ -112,7 +112,7 @@ func (p SilverwingFiend) GetHeavyAttack(stats models.Stats) models.Skill {
 	if stats.Weapon == "专武" {
 		skill := getDefaultBasicAttack()
 		skill.Name = "重击"
-		skill.Base = 180.0 + 49.0
+		skill.Base = 180.0 + 49.0 // 会带上第一段普攻
 		skill.AttackRate = 96.0 + 26.0
 		skill.DefenseRate = 381.0 + 103.0
 		skill.Count = 7 * p.GetNormalPeriodCount()
@@ -128,9 +128,9 @@ func (p SilverwingFiend) GetBloodPeriodHeavyAttack(stats models.Stats) models.Sk
 	if stats.Weapon == "专武" {
 		skill := getDefaultBasicAttack()
 		skill.Name = "重击-血誓"
-		skill.Base = 180.0
-		skill.AttackRate = 96.0
-		skill.DefenseRate = 381.0
+		skill.Base = 180.0 + 49.0 // 会带上第一段普攻
+		skill.AttackRate = 96.0 + 26.0
+		skill.DefenseRate = 381.0 + 103.0
 		skill.Count = 3 * p.GetBloodPeriodCount()
 		skill.DamageBoost = 15.0
 

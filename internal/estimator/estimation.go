@@ -65,6 +65,8 @@ func getCompanion(stats models.Stats) companions.Companion {
 		return companions.GodOfAnnihilation{}
 	case "银翼恶魔":
 		return companions.SilverwingFiend{}
+	case "冥罗之主":
+		return companions.Netherlord{}
 	case "深空飞行员":
 		return companions.DeepspacePilot{}
 	case "异界来客":
@@ -123,6 +125,8 @@ func getSetCard(stats models.Stats) set_cards.SetCard {
 		setCard = set_cards.Diviner{}
 	case "猩红":
 		setCard = set_cards.CrimsonRapture{}
+	case "沉冥":
+		setCard = set_cards.Duskshard{}
 	case "无套装":
 		setCard = set_cards.NoSet{}
 	default:
@@ -147,6 +151,7 @@ func getSetCardBuff(stats models.Stats, setCard set_cards.SetCard) models.StageB
 		"暗蚀国王":     "夜誓",
 		"终末之神":     "神谕",
 		"银翼恶魔":     "猩红",
+		"冥罗之主":     "沉冥",
 	}
 	var setCardBuff models.StageBuff
 	if setCard.GetName() == setMap[stats.Companion] {
@@ -186,6 +191,10 @@ func applySetCardBuff(flow *models.CompanionFlow, buff models.StageBuff) {
 				if skillBuff.CountBonus > 1 {
 					skill.Count = int(float64(skill.Count) * skillBuff.CountBonus)
 				}
+
+				if skillBuff.NotApplicable {
+					skill.Count = 0
+				}
 			}
 
 			period.SkillSet.Skills[i] = skill
@@ -208,7 +217,7 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 			rawSkillScore *= 1 + (skill.DamageBoost+period.Boost)/100
 
 			// apply oath boost
-			if skill.Name == "誓约" || skill.Name == "誓约-同频觉醒" || skill.Name == "誓约-同频攻击" {
+			if skill.Name == "誓约" || skill.Name == "誓约-同频觉醒" || skill.Name == "誓约-同频攻击" || skill.Name == "誓约-尘露不忘" {
 				rawSkillScore *= 1 + skill.OathBoost/100
 			}
 
@@ -227,6 +236,15 @@ func estimate(stats models.Stats, companionFlow models.CompanionFlow) models.Com
 
 			if skill.Name == "誓约" {
 				weakenRate = 1
+			}
+
+			// 当尘露不忘不能暴击时（非三阶）我们则只考虑在虚弱期内施放这个誓约技
+			if skill.Name == "誓约-尘露不忘" && !skill.CanBeCrit {
+				weakenRate = 1
+			}
+			// 当尘露不忘可以暴击时（三阶），该技能在顺谱虚弱期（0.5虚弱期比例）情况下两次依旧会在虚弱期内施放，但如果在逆谱虚弱期（0.25虚弱期比例）情况下则有一次会在非虚弱期内施放
+			if skill.Name == "誓约-尘露不忘" && skill.CanBeCrit {
+				weakenRate *= 2
 			}
 			critSkillCount := (1 - weakenRate) * float64(skill.Count)
 			critPeriodScore := rawSkillScore * critSkillCount

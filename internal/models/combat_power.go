@@ -73,6 +73,7 @@ type SkillBuff struct {
 	OathBoost        float64
 	DefenceReduction float64
 	CountBonus       float64
+	NotApplicable    bool
 }
 
 type StageBuff struct {
